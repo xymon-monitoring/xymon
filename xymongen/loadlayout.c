@@ -43,7 +43,6 @@ static xymonpagelist_t *pagelisthead = NULL;
 int	pagecount = 0;
 int	hostcount = 0;
 
-char    *wapcolumns = NULL;                     /* Default columns included in WAP cards */
 char    *nopropyellowdefault = NULL;
 char    *nopropreddefault = NULL;
 char    *noproppurpledefault = NULL;
@@ -175,7 +174,7 @@ host_t *init_host(char *hostname, int issummary,
 		  char *comment, char *description,
 		  char *ip,
 		  int dialup, double warnpct, int warnstops, char *reporttime,
-		  char *alerts, int crittime, char *waps,
+		  char *alerts, int crittime,
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests)
 {
 	host_t 		*newhost = (host_t *) calloc(1, sizeof(host_t));
@@ -204,22 +203,6 @@ host_t *init_host(char *hostname, int issummary,
 	else {
 		newhost->alerts = NULL;
 	}
-	newhost->anywaps = 0;
-	newhost->wapcolor = -1;
-
-	/* Wap set is :
-	 * - Specific WML: tag
-	 * - NK: tag
-	 * - --wap=COLUMN cmdline option
-	 * - NULL
-	 */
-	if (waps || alerts) {
-		newhost->waps = strdup(waps ? waps : alerts);
-	}
-	else {
-		newhost->waps = wapcolumns;
-	}
-
 	if (nopropyellowtests) {
 		char *p;
 		p = skipword(nopropyellowtests); if (*p) *p = '\0'; else p = NULL;
@@ -596,7 +579,7 @@ xymongen_page_t *load_layout(char *pgset)
 			double warnpct = reportwarnlevel;
 			int warnstops = reportwarnstops;
 			char *displayname, *clientalias, *comment, *description;
-			char *alertlist, *onwaplist, *reporttime;
+			char *alertlist, *reporttime;
 			char *nopropyellowlist, *nopropredlist, *noproppurplelist, *nopropacklist;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
@@ -632,7 +615,6 @@ xymongen_page_t *load_layout(char *pgset)
 			alertlist = xmh_item(xymonhost, XMH_NK);
 			hval = xmh_item(xymonhost, XMH_NKTIME); if (hval) crittime = within_sla(xmh_item(xymonhost, XMH_HOLIDAYS), hval, 0);
 
-			onwaplist = xmh_item(xymonhost, XMH_WML);
 			nopropyellowlist = xmh_item(xymonhost, XMH_NOPROPYELLOW);
 			if (nopropyellowlist == NULL) nopropyellowlist = xmh_item(xymonhost, XMH_NOPROP);
 			nopropredlist = xmh_item(xymonhost, XMH_NOPROPRED);
@@ -693,7 +675,7 @@ xymongen_page_t *load_layout(char *pgset)
 							    comment, description,
 							    hostip, dialup,
 							    warnpct, warnstops, reporttime,
-							    alertlist, crittime, onwaplist,
+							    alertlist, crittime,
 							    nopropyellowlist, nopropredlist, noproppurplelist, nopropacklist);
 					if (curgroup != NULL) {
 						curgroup->hosts = curhost;
@@ -716,7 +698,7 @@ xymongen_page_t *load_layout(char *pgset)
 									    comment, description,
 									    hostip, dialup,
 									    warnpct, warnstops, reporttime,
-									    alertlist, crittime, onwaplist,
+									    alertlist, crittime,
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist);
 				}
@@ -763,7 +745,7 @@ xymongen_page_t *load_layout(char *pgset)
 									    comment, description,
 									    hostip, dialup,
 									    warnpct, warnstops, reporttime,
-									    alertlist, crittime, onwaplist,
+									    alertlist, crittime,
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist);
 

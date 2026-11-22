@@ -259,13 +259,10 @@ state_t *init_state(char *filename, logdata_t *log)
 
 	if (host) {
 		newstate->entry->alert = checkalert(host->alerts, testname);
-
-		/* If no WAP's specified, default all tests to be on WAP page */
-		newstate->entry->onwap = (host->waps ? checkalert(host->waps, testname) : 1);
 	}
 	else {
 		dbgprintf("   hostname %s not found\n", hostname);
-		newstate->entry->alert = newstate->entry->onwap = 0;
+		newstate->entry->alert = 0;
 	}
 
 	newstate->entry->sumurl = NULL;

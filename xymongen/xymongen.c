@@ -30,7 +30,6 @@ static char rcsid[] = "$Id$";
 #include "loaddata.h"
 #include "process.h"
 #include "pagegen.h"
-#include "wmlgen.h"
 #include "rssgen.h"
 #include "csvreport.h"
 
@@ -194,15 +193,6 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			if (lp) htaccess = strdup(lp+1);
 			else htaccess = ".htaccess";
-		}
-		else if ((strcmp(argv[i], "--wml") == 0) || argnmatch(argv[i], "--wml=")) {
-			char *lp = strchr(argv[i], '=');
-
-			if (lp) {
-				wapcolumns = (char *) malloc(strlen(lp)+2);
-				sprintf(wapcolumns, ",%s,", (lp+1));
-			}
-			enable_wmlgen = 1;
 		}
 		else if (argnmatch(argv[i], "--nstab=")) {
 			char *lp = strchr(argv[i], '=');
@@ -509,7 +499,6 @@ int main(int argc, char *argv[])
 			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
 			printf("\nAlternate output formats:\n");
-			printf("    --wml[=test1,test2,...]     : Generate a small (All nongreen-style) WML page\n");
 			printf("    --nstab=FILENAME            : Generate a Netscape Sidebar feed\n");
 			printf("    --nslimit=COLOR             : Minimum color to include on Netscape sidebar\n");
 			printf("    --rss                       : Generate a RSS/RDF feed of alerts\n");
@@ -571,9 +560,9 @@ int main(int argc, char *argv[])
 	if (xgetenv("XYMONSUBPAGEHTACCESS")) xymonsubpagehtaccess = strdup(xgetenv("XYMONSUBPAGEHTACCESS"));
 
 	/*
-	 * When doing embedded- or snapshot-pages, don't build the WML/RSS pages.
+	 * When doing embedded- or snapshot-pages, don't build the RSS pages.
 	 */
-	if (embedded || snapshot) enable_wmlgen = wantrss = 0;
+	if (embedded || snapshot) wantrss = 0;
 	if (embedded) {
 		egocolumn = htaccess = NULL;
 
@@ -678,12 +667,6 @@ int main(int argc, char *argv[])
 	if (pageset == NULL) {
 		send_summaries(sumhead);
 		add_timestamp("Summary transmission done");
-	}
-
-	/* Generate WML cards */
-	if (enable_wmlgen) {
-		do_wml_cards(pagedir);
-		add_timestamp("WML generation done");
 	}
 
 	/* Need to do this before sending in our report */

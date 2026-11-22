@@ -23,14 +23,13 @@ extern host_t *init_host(char *hostname, int issummary,
 			 char *ip,
 			 int dialup,
 			 double warnpct, int warnstops, char *reporttime,
-			 char *alerts, int crittime, char *waps,
+			 char *alerts, int crittime,
 			 char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests);
 
 extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;
 extern char	*noproppurpledefault;
 extern char	*nopropackdefault;
-extern char     *wapcolumns;
 extern time_t   snapshot;
 
 #endif

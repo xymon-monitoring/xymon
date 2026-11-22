@@ -39,7 +39,7 @@ src="$ROOT/xymongen"
 # shellcheck disable=SC2086  # the flag lists are meant to split
 "$CC" -fsanitize=address -g $cflags -iquote "$src" -o "$work/xymongen" \
 	"$src/xymongen.c" "$src/loadlayout.c" "$src/loaddata.c" "$src/pagegen.c" \
-	"$src/process.c" "$src/wmlgen.c" "$src/rssgen.c" "$src/util.c" \
+	"$src/process.c" "$src/rssgen.c" "$src/util.c" \
 	"$src/debug.c" "$src/csvreport.c" \
 	"$(xymon_lib "$ROOT" libxymontime.a)" "$(xymon_lib "$ROOT" libxymoncomm.a)" "$(xymon_lib "$ROOT" libxymon.a)" \
 	$pcre_libs $ldflags 2>"$work/cc.log" \
