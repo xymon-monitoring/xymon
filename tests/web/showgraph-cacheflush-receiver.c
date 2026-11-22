@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2026 Bruno Manzoni */
 /* Stands in for xymond_rrd's cache-control socket, for
  * tests/web/showgraph-cacheflush.sh: binds a datagram socket at argv[1],
  * prints the first argv[2] requests it receives (one by default), one per

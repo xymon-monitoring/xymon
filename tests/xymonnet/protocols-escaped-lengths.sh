@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # A parsed send, expect or until must be as long as the parser says it is.
 #
 # getescapestring() resolves \xNN, so any of them may contain a NUL. Copying

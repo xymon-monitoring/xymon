@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 # shellcheck shell=bash
 #
 # tests/lib/xymongen-board.sh -- shared scaffolding for the tests that run

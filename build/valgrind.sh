@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 Bruno Manzoni
 #
 # build/valgrind.sh -- run one Xymon program under Valgrind's Memcheck, and
 # say whether it leaked memory or misused it.

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2026 Bruno Manzoni */
 /* Prints the size of sockaddr_un.sun_path on this platform: 108 on Linux,
  * 104 on the BSDs and macOS, and other values elsewhere. Tests that pin a
  * socket-path boundary build their paths from it rather than assume one.

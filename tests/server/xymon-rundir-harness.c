@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Copyright (C) 2026 Bruno Manzoni */
 /* Prints what xymon_rundir() (lib/environ.c) resolves the runtime directory
  * to, for tests/server/xymon-rundir.sh. The environment is the input: the
  * test sets XYMONRUNDIR and XYMONSERVERLOGS before running it.
