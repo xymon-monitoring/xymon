@@ -54,7 +54,7 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 all: $(PROGRAMS)
 
 cgiwrap.o: cgiwrap.c
-	$(CC) $(CFLAGS) -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ $<
 
 cgiwrap: $(CGIWRAPOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(CGIWRAPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
@@ -90,7 +90,7 @@ datepage.cgi: $(DATEPAGEOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(DATEPAGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 showgraph.o: showgraph.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
 showgraph.cgi: $(SHOWGRAPHOBJS) $(XYMONCOMMLIB)
@@ -112,7 +112,7 @@ criticalview.cgi: $(CRITVIEWOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITVIEWOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 criticalview.o: criticalview.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 criticaleditor.cgi: $(CRITEDITOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITEDITOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
@@ -139,7 +139,7 @@ hostlist.cgi: $(HOSTLISTOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 perfdata.o: perfdata.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
 
 # Need -lm on perfdata because it refers to isnan()
 perfdata.cgi: $(PERFDATAOBJS) $(XYMONCOMMLIB)
@@ -156,7 +156,7 @@ appfeed.cgi: $(APPFEEDOBJS) $(XYMONLIB)
 
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 
 clean:

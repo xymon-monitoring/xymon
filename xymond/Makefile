@@ -68,16 +68,16 @@ xymond_rrd: $(RRDOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(RRDLIBS) $(PCRELIBS) -lm
 
 xymond.o: xymond.c ../lib/xymontls.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ xymond.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ xymond.c
 
 do_alert.o: do_alert.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
 
 do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
-	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) $(RRDDEF) -c -o $@ do_rrd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) $(RRDDEF) -c -o $@ do_rrd.c
 
 xymond_capture.o: xymond_capture.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ xymond_capture.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ xymond_capture.c
 
 xymond_sample: $(SAMPLEOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS)
@@ -98,16 +98,16 @@ xymond_client: $(CLIENTOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/libxymonclientcomm.a  ../lib/libxymontime.a ../lib/libxymonclient.a $(PCRELIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
 xymond_client.o: xymond_client.c client/*.c
-	$(CC) $(CFLAGS) -c -o $@ xymond_client.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ xymond_client.c
 
 combostatus.o: combostatus.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 combostatus: $(COMBOTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 xymon-mailack.o: xymon-mailack.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ xymon-mailack.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ xymon-mailack.c
 
 xymon-mailack: $(MAILACKOBJS) $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
@@ -158,7 +158,7 @@ cfgfiles:
 	cat etcfiles/cgioptions.cfg.DIST | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' >etcfiles/cgioptions.cfg
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f $(PROGRAMS) *.o *~ client/*~ rrd/*~
