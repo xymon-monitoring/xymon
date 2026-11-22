@@ -277,12 +277,16 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		for (t=firsttest; (t && (t->host == host)); t = t->next) {
 			SBUF_DEFINE(urlmsg);
 			http_data_t *req = (http_data_t *) t->privdata;
+			char *shownurl;
 
 			/* Skip the "data" reports */
 			if (t->senddata) continue;
 
-			SBUF_MALLOC(urlmsg, 1024 + strlen(req->url));
-			snprintf(urlmsg, urlmsg_buflen, "\n&%s %s - ", colorname(req->httpcolor), req->url);
+			/* Show the forced target address, if any, so several tests on one URL differ */
+			shownurl = urlwithforcedip(req->url, req->weburl.desturl);
+			SBUF_MALLOC(urlmsg, 1024 + strlen(shownurl));
+			snprintf(urlmsg, urlmsg_buflen, "\n&%s %s - ", colorname(req->httpcolor), shownurl);
+			xfree(shownurl);
 			addtostatus(urlmsg);
 
 			if (req->httpcolor == COL_GREEN) addtostatus("OK");

@@ -1,0 +1,15 @@
+xymonnet -- a forced target address shows in the http/sslcert label
+-------------------------------------------------------------------
+
+A web or sslcert test that forces its target address --
+https://example.com=1.2.3.4/ -- now shows that address in the status label,
+after the host (example.com=1.2.3.4). Several tests on one URL forcing
+different addresses, an IPv4 and an IPv6 of a dual-stack host for instance,
+used to share one status, one history and one graph; they now get one of each
+per address. A test that forces no address, letting DNS resolve it, is
+unchanged.
+
+Only tests that force an address are affected, and for those the RRD file name
+carries the address too, so such a test's graph starts a new file per address
+at the upgrade: the data under the old name stays but stops growing. A URL's
+credentials are not shown, as before.

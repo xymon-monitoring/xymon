@@ -1247,6 +1247,13 @@ it should be done as
 
 	http://www.sample.com:3128=1.2.3.4/index.html
 
+When one site is tested at several addresses this way -- an IPv4 and an
+IPv6 address of a dual-stack host, say -- the forced address is shown in
+the test's status label, after the hostname ("www.sample.com=1.2.3.4"),
+so tests that share a URL but force different addresses keep their own
+status, history and graph. A test that forces no address is shown as
+before, and a URL's login credentials are never shown.
+
 .IP "HTTP Testing via proxy"
 \fBNOTE:\fR This is not enabled by default. You must
 add the "\-\-bb\-proxy\-syntax" option when running

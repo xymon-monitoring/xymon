@@ -2181,8 +2181,13 @@ void send_sslcert_status(testedhost_t *host)
 				int sslcolor = COL_GREEN;
 				int ciphercolor = COL_GREEN;
 				int keycolor = COL_GREEN;
+				char *certowner_forced = NULL;
 
-				if (s == httptest) certowner = ((http_data_t *)t->privdata)->url;
+				if (s == httptest) {
+					http_data_t *req = (http_data_t *)t->privdata;
+					/* Show the forced target address, if any, so dual-stack tests on one URL differ */
+					certowner = certowner_forced = urlwithforcedip(req->url, req->weburl.desturl);
+				}
 				else if (s == ldaptest) certowner = t->testspec;
 
 				if (t->certexpires < (now+host->sslwarndays*86400)) sslcolor = COL_YELLOW;
@@ -2239,6 +2244,8 @@ void send_sslcert_status(testedhost_t *host)
 
 				/* The subject and issuer are what the certificate holds */
 				addtobuffer(sslmsg, htmlattrquoted(t->certinfo));
+
+				if (certowner_forced) xfree(certowner_forced);
 			}
 		}
 	}
