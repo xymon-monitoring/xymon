@@ -1,0 +1,14 @@
+analysis.cfg -- all of /run and the WSL2 header mount ignored on Linux
+----------------------------------------------------------------------
+
+On new installs, the CLASS=linux block of analysis.cfg now ignores every
+mount under /run, except /run/shm and /run/media (removable disks), which
+stay monitored. It used to name /run, /run/lock and /run/user/<uid> only,
+so /run/user, /run/qemu and other tmpfs mounts there alerted when full. It
+also ignores the read-only kernel-header image WSL2 mounts at
+/usr/src/linux-headers-<version>-microsoft-..., full by construction,
+which kept disk and inode red on every WSL host.
+
+An upgrade never replaces an installed analysis.cfg: copy the four new
+DISK and INODE lines from the CLASS=linux block of analysis.cfg.DIST into
+yours to get the same result. Those mounts are then no longer tracked.
