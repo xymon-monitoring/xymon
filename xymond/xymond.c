@@ -2583,7 +2583,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	else hwalk = xtreeData(rbhosts, hosthandle);
 
 	if (!oksender_host(maintsenders,
-		      (hwalk->ip && (strcmp(hwalk->ip, "0.0.0.0") != 0)) ? hwalk->ip : NULL,
+		      ((strcmp(hwalk->ip, "0.0.0.0") != 0) ? hwalk->ip : NULL),
 		      hwalk->hostname, msg, msg->buf)) goto done;
 
 	if (tname) {
@@ -4779,7 +4779,7 @@ void do_message(conn_t *msg, char *origin)
 				"  <ValidTime>", 	timestr(log->validtime), 		"</ValidTime>\n",
 				"  <AckTime>", 		timestr(log->acktime), 			"</AckTime>\n",
 				"  <DisableTime>", 	timestr(log->enabletime), 		"</DisableTime>\n",
-				"  <Sender>", 		(log->sender ? log->sender : "xymond"),	"</Sender>\n",
+				"  <Sender>", 		log->sender,	"</Sender>\n",
 				NULL);
 			timestr(-999);
 
@@ -5025,7 +5025,7 @@ void do_message(conn_t *msg, char *origin)
 					"    <ValidTime>", timestr(lwalk->validtime), "</ValidTime>\n",
 					"    <AckTime>", timestr(lwalk->acktime), "</AckTime>\n",
 					"    <DisableTime>", timestr(lwalk->enabletime), "</DisableTime>\n",
-					"    <Sender>", (lwalk->sender ? lwalk->sender : "xymond"), "</Sender>\n",
+					"    <Sender>", lwalk->sender, "</Sender>\n",
 					NULL);
 				timestr(-999);
 

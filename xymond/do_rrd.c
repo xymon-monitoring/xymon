@@ -295,7 +295,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	pollinterval = rrdinterval;
 	rrdinterval = DEFAULT_RRD_INTERVAL;
 
-	if ((rrdfn == NULL) || (strlen(rrdfn) == 0)) {
+	if (strlen(rrdfn) == 0) {
 		errprintf("RRD update for no file\n");
 		return -1;
 	}
