@@ -229,6 +229,13 @@ void request_cacheflush(char **hosts, int hostcount)
 	close(ctlsocket);
 
 	/*
+	 * No flush of rrdcached here: with RRDCACHED_ADDRESS set, rrd_graph()
+	 * asks the daemon to flush each RRD it reads, by the name it opens it
+	 * with -- after the wait below, in which xymond_rrd hands its cached
+	 * updates over to the daemon.
+	 */
+
+	/*
 	 * Sleep 0.3 secs to allow the cache flush to happen.
 	 * Note: It isn't guaranteed to happen in this time, but
 	 * there's a good chance that it will.
