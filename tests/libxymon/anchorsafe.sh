@@ -4,7 +4,7 @@
 # tests/libxymon/anchorsafe.sh
 #
 # anchorsafe() (lib/misc.c) reduces a group title to an <A NAME> jump target
-# (xymongen/pagegen.c). Unlike stripnonwords() it keeps a byte >= 0x80, so an
+# (xymongen/pagegen.c). It keeps a byte >= 0x80, so an
 # accented title stays distinct and a non-Latin one does not collapse to an
 # empty anchor -- while the HTML metacharacters < > & " still become one
 # underscore, keeping the result safe in a NAME= and a SUMMARY= attribute.
