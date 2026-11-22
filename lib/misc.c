@@ -255,6 +255,20 @@ char *anchorsafe(char *l)
 		}
 	}
 
+	/* The 250-byte cap can fall inside a multi-byte character. If the next
+	   input byte is a UTF-8 continuation byte (10xxxxxx), the kept prefix may
+	   end mid-character; back up over at most three continuation bytes and drop
+	   the lead byte, as do_acklog does. Bounded to three, and dropping the byte
+	   before only when it is a real lead byte (>= 0xC0), so a non-UTF-8 run of
+	   0x80-0xBF bytes (Latin-1, say) is left alone rather than eaten. */
+	if (((unsigned char)*inp & 0xc0) == 0x80) {
+		int back = outidx;
+
+		while ((back > 0) && ((outidx - back) < 3) &&
+		       (((unsigned char)reduced[back - 1] & 0xc0) == 0x80)) back--;
+		if ((back > 0) && ((unsigned char)reduced[back - 1] >= 0xc0)) outidx = back - 1;
+	}
+
 	/* strip a final invalid char */
 	if ((outidx > 0) && (reduced[outidx-1] == '_')) {
 		reduced[outidx-1] = '\0';
