@@ -219,10 +219,10 @@ unsigned char *nlencode(unsigned char *msg)
 	return buf;
 }
 
-void nldecode(unsigned char *msg)
+void nldecode(char *msg)
 {
-	unsigned char *inp = msg;
-	unsigned char *outp = msg;
+	char *inp = msg;
+	char *outp = msg;
 	int n;
 
 	if ((msg == NULL) || (*msg == '\0')) return;
