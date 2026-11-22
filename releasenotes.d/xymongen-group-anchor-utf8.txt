@@ -1,0 +1,9 @@
+xymongen -- a group title's anchor keeps its non-ASCII letters
+--------------------------------------------------------------
+
+The <A NAME> jump target xymongen makes from a group title reduced every
+non-ASCII byte to an underscore, so an accented title like "Réseau"
+anchored as "group-R_seau" and a non-Latin one collapsed to nothing. The
+anchor now keeps those bytes ("group-Réseau"). HTML metacharacters are
+still reduced. A bookmark to an old underscore anchor no longer resolves;
+re-save it from the page.
