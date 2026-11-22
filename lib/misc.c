@@ -226,6 +226,47 @@ char *stripnonwords(char *l)
 }
 
 
+char *anchorsafe(char *l)
+{
+	/* Like stripnonwords(), but keeps a byte >= 0x80 instead of reducing it
+	   to an underscore. Its one use is an <A NAME> group-title jump target,
+	   where a non-ASCII byte is a valid name character: carrying it keeps an
+	   accented title distinct ("R\xC3\xA9seau", not "R_seau") and a non-Latin
+	   one from collapsing to nothing. Everything else -- including the HTML
+	   metacharacters < > & " -- still becomes a single underscore, so the
+	   result is safe in a NAME= and a SUMMARY= attribute alike. */
+	static char reduced[255];
+	char *inp;
+	int outidx;
+
+	reduced[0] = '\0';
+	if (!l) return (char *)reduced;
+
+	for (inp=l, outidx=0; (*inp && (outidx < 250)); inp++) {
+		if ( ((*inp >= 'A') && (*inp <= 'Z')) ||
+		     ((*inp >= 'a') && (*inp <= 'z')) ||
+		     ((*inp >= '0') && (*inp <= '9')) ||
+		     ((unsigned char)*inp >= 0x80)       ) {
+			reduced[outidx++] = *inp;
+		}
+		/* Replace anything else with an underscore, compacting a run into 1 */
+		else if ((outidx == 0) || (reduced[outidx - 1] != '_')) {
+			reduced[outidx++] = '_';
+		}
+	}
+
+	/* strip a final invalid char */
+	if ((outidx > 0) && (reduced[outidx-1] == '_')) {
+		reduced[outidx-1] = '\0';
+	}
+	else {
+		reduced[outidx] = '\0';
+	}
+
+	return (char *)reduced;
+}
+
+
 int argnmatch(char *arg, char *match)
 {
 	return (strncmp(arg, match, strlen(match)) == 0);
