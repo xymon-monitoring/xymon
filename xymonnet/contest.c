@@ -1493,6 +1493,28 @@ void do_tcp_tests(int timeout, int concurrency)
 
 				nextinqueue=nextinqueue->next;
 			}
+			else if ((errno == EAFNOSUPPORT) || (errno == EPROTONOSUPPORT)) {
+				/*
+				 * This system has no sockets of the test's family -- an
+				 * IPv6 address on a server without IPv6. Trying again
+				 * will not change that: the test fails as a connection
+				 * that could not be made, and the next one goes ahead.
+				 */
+				char addrtxt[INET6_ADDRSTRLEN];
+
+				nextinqueue->connres = errno;
+				nextinqueue->open = 0;
+				nextinqueue->errcode = CONTEST_ENOCONN;
+				nextinqueue->fd = -1;
+				pending--;
+				if (getnameinfo((struct sockaddr *)&nextinqueue->addr, nextinqueue->addrlen,
+						addrtxt, sizeof(addrtxt), NULL, 0, NI_NUMERICHOST) != 0) strcpy(addrtxt, "?");
+				errprintf("Cannot test %s at %s: %s\n",
+					  (nextinqueue->svcinfo ? nextinqueue->svcinfo->svcname : "?"), addrtxt,
+					  strerror(nextinqueue->connres));
+				nextinqueue = nextinqueue->next;
+				sockok = 1;
+			}
 			else {
 				int newconcurrency = ((activesockets > 5) ? (activesockets-1) : 5);
 
