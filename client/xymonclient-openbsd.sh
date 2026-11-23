@@ -379,9 +379,16 @@ run_df() {
 emit_df() {
 	_kind="$1"; _label="$2"; shift 2
 	_out=`run_df "$@"`; _rc=$?
-	if [ -z "$_out" ] && [ "$_rc" -ne 0 ]; then
-		echo "xymonclient-openbsd: df $_kind collection failed (status $_rc) with no output; reporting data as unavailable" >&2
-		echo "$_label report collection failed: df exited $_rc with no output"
+	if [ -z "$_out" ]; then
+		# No rows at all. A non-zero exit is a collection failure - surface a
+		# marker so the server goes yellow. That is also what OpenBSD's df does
+		# when every filesystem is excluded by type (exit 1, seen on 8.0). A
+		# clean exit with no rows emits nothing, as in the FreeBSD and NetBSD
+		# clients, whose df does exit 0 there: the three functions are the same.
+		if [ "$_rc" -ne 0 ]; then
+			echo "xymonclient-openbsd: df $_kind collection failed (status $_rc) with no output; reporting data as unavailable" >&2
+			echo "$_label report collection failed: df exited $_rc with no output"
+		fi
 		return 1
 	fi
 	return 0

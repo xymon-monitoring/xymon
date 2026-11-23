@@ -80,6 +80,15 @@ fsf_write_mount_stub
 fsf_selfcheck
 fsf_contract
 
+# A df -i that exits 0 with no output: every filesystem excluded by type, which
+# is what NetBSD's df does then (seen on 11.0). The client must emit an EMPTY
+# [inode] section, as the FreeBSD client does, which the server reads as "No
+# filesystems reporting inode data". Feeding the empty output to the awk gave
+# the header and nothing else.
+inode_sec=$(fsf_section "$(fsf_report DF_INODE_EMPTY_OK=1)" inode)
+assert_equal "" "$inode_sec" \
+	"an empty df -i that exits 0 yields an empty [inode] section, no stray header"
+
 # The built-in list, pinned through the report rather than through df's argv:
 # every type it names has a filesystem in the fixture, and none may be reported.
 assert_not_contains "/pseudo/" "$(fsf_section "$(fsf_report)" df)" \
