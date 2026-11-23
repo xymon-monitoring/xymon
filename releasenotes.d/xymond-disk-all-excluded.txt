@@ -1,0 +1,10 @@
+xymond -- a disk status with every filesystem excluded is clear
+---------------------------------------------------------------
+A client whose XYMONCLIENT_FS_* settings exclude every mounted filesystem
+sends no disk report, and says so. Its "disk" status was yellow, "Expected
+strings not found in df output"; it is now clear, "No filesystems to check".
+This concerns AIX clients today, and the other Unix clients once they send
+the same line.
+
+A DISK rule that requires a filesystem to exist still alerts. To have green
+where there is nothing to check, xymond_client takes --clear-color=green.

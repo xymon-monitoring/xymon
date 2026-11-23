@@ -51,6 +51,13 @@ int sendclearsvcs = 1;
 int localmode     = 0;
 int unknownclientosok = 0;
 int noreportcolor = COL_CLEAR;
+
+/*
+ * What a client writes in [df] when its XYMONCLIENT_FS_* settings exclude every
+ * mounted filesystem: "Disk report collection failed: every filesystem excluded
+ * by the XYMONCLIENT_FS_* settings". Matched on the part that says why.
+ */
+#define DISK_ALL_EXCLUDED "every filesystem excluded by the XYMONCLIENT_FS_"
 int separate_uptime_status = 0;
 
 int usebackfeedqueue = 0;
@@ -672,7 +679,19 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
 	}
 
-	if ((capacol == -1) && (mntcol == -1)) {
+	if ((capacol == -1) && (mntcol == -1) && strstr(dfstr, DISK_ALL_EXCLUDED)) {
+		/*
+		 * No header, and the client says why: its XYMONCLIENT_FS_* settings
+		 * leave every filesystem out. That is nothing to check, not a report
+		 * that could not be read. A DISK rule that requires a filesystem to
+		 * exist is still checked below, and still alerts.
+		 */
+		diskcolor = noreportcolor;
+		sprintf(msgline, "&%s No filesystems to check: every one is excluded by the client's XYMONCLIENT_FS_* settings\n",
+			colorname(noreportcolor));
+		addtobuffer(monmsg, msgline);
+	}
+	else if ((capacol == -1) && (mntcol == -1)) {
 		/* If this happens, we havent found our headers so no filesystems have been processed */
 		diskcolor = COL_YELLOW;
 		sprintf(msgline, "&red Expected strings (%s and %s) not found in df output\n", 
