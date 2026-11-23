@@ -1,0 +1,7 @@
+xymongen -- the RSS feed declares its charset and stays well-formed
+-------------------------------------------------------------------
+xymongen's --rss feed wrote a bare "<?xml version='1.0'?>" and escaped only
+the item description, so a non-UTF-8 charset was read as UTF-8 and a title, a
+link with a query "&", or an invalid byte could make the feed malformed. It
+now declares the pages' charset (HTMLCONTENTTYPE) and emits every field as
+well-formed XML, as the appfeed and perfdata feeds already do.
