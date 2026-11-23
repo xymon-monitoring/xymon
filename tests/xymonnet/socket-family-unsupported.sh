@@ -63,8 +63,11 @@ EOF
 	|| "$CC" -shared -fPIC -o "$work/noinet6.so" "$work/noinet6.c" \
 	|| skip "cannot build a preloadable library with $CC"
 
+# The variables are set by the shell for the program itself, never through
+# env(1): /usr/bin/env is an arm64e system binary on macOS, and where SIP is off
+# dyld inserts the library into it too and stops, the library being arm64.
 preload() {
-	env LD_PRELOAD="$work/noinet6.so" DYLD_INSERT_LIBRARIES="$work/noinet6.so" "$@"
+	LD_PRELOAD="$work/noinet6.so" DYLD_INSERT_LIBRARIES="$work/noinet6.so" "$@"
 }
 
 # Does preloading it take effect here at all?
@@ -79,7 +82,7 @@ cp "$root/xymonnet/protocols.cfg" "$work/home/etc/protocols.cfg"
 # 2001:db8:: is documentation space; 127.0.0.1 port 22 just has to answer or refuse.
 printf '2001:db8::5\tv6host\t# ssh\n127.0.0.1\tv4host\t# ssh\n' > "$work/home/etc/hosts.cfg"
 
-preload env XYMONHOME="$work/home" XYMONNETSVCS=ssh \
+XYMONHOME="$work/home" XYMONNETSVCS=ssh preload \
 	"$XYMONNET" --no-update --noping --timeout=3 >"$work/out" 2>&1 &
 pid=$!
 register_cleanup "stop_process $pid"
