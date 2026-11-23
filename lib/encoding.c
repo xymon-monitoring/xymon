@@ -77,7 +77,7 @@ char *base64encode(unsigned char *buf)
 
 char *base64decode(unsigned char *buf)
 {
-	static short bval[128] = { 0, };
+	static short bval[256] = { 0, };
 	static short bvalinit = 0;
 	int n0, n1, n2, n3;
 
