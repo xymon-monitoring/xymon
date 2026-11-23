@@ -60,7 +60,9 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
     acknowledged rather than ignored. The decoded bytes are shown as they are,
     under the charset the web pages declare (<b>HTMLCONTENTTYPE</b>, UTF-8 by
     default); a reply in another charset is carried through but not converted.
-    The message body's transfer-encoding and MIME structure are not decoded.</p>
+    The message body is decoded for the cause: a base64 or quoted-printable
+    transfer-encoding, and the first text/plain part of a multipart message, so
+    the explanation shows even when the reply is encoded.</p>
 <p class="Pp"></p>
 </section>
 <section class="Sh">

@@ -85,6 +85,36 @@ static int hexval(int c)
 }
 
 /*
+ * Quoted-printable decode (RFC 2045), for a mail body. Writes to out, which the
+ * caller sizes >= inlen+1, and never writes more than inlen bytes. "=XX" becomes
+ * the byte; a trailing "=" before the newline is a soft line break and is
+ * dropped with the newline; a malformed "=" (end of input, or a non-hex digit)
+ * is emitted literally. Returns the number of bytes written.
+ */
+size_t qpdecode(const char *in, size_t inlen, char *out)
+{
+	size_t i = 0, o = 0;
+
+	while (i < inlen) {
+		if (in[i] == '=') {
+			if ((i+1 < inlen) && ((in[i+1] == '\n') || (in[i+1] == '\r'))) {
+				i++;					/* soft line break */
+				if ((i < inlen) && (in[i] == '\r')) i++;
+				if ((i < inlen) && (in[i] == '\n')) i++;
+				continue;
+			}
+			if ((i+2 < inlen)) {
+				int h = hexval((unsigned char)in[i+1]), l = hexval((unsigned char)in[i+2]);
+				if ((h >= 0) && (l >= 0)) { out[o++] = (char)((h << 4) | l); i += 3; continue; }
+			}
+			/* a lone '=' at end of input, or a bad "=XX": literal */
+		}
+		out[o++] = in[i++];
+	}
+	return o;
+}
+
+/*
  * RFC 2047: decode the =?charset?B|Q?text?= encoded-words in a single,
  * already-unfolded header value, leaving the runs between them literal. The
  * charset is parsed only to step over it -- the decoded bytes are carried as

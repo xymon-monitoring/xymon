@@ -13,6 +13,7 @@
 
 extern char *base64encode(unsigned char *buf);
 extern char *base64decode(unsigned char *buf);
+extern size_t qpdecode(const char *in, size_t inlen, char *out);
 extern char *rfc2047_decode(char *hdr);
 extern void getescapestring(char *msg, unsigned char **buf, int *buflen);
 extern unsigned char *nlencode(unsigned char *msg);

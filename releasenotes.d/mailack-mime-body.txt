@@ -1,0 +1,11 @@
+xymon-mailack -- decode the body of an alert reply for the cause
+----------------------------------------------------------------
+
+Following the header decoding, the body of a reply is now decoded for the
+acknowledgement cause. A base64 or quoted-printable transfer-encoding is
+decoded, and for a multipart reply -- what most mail clients send -- the first
+text/plain part is used and its HTML alternative ignored. So the explanation an
+operator typed in the reply shows on the status page instead of a line of
+base64 or a MIME boundary. The message is bounded against a hostile sender
+(capped size, part count and nesting depth); charsets other than UTF-8 are
+still carried, not converted.
