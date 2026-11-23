@@ -31,6 +31,7 @@ work=$(mktempdir)
 register_cleanup "rm -rf '$work'"
 
 cat > "$work/noinet6.c" <<'EOF'
+#define _GNU_SOURCE	/* RTLD_NEXT, on glibc */
 #include <errno.h>
 #include <stddef.h>
 #include <sys/types.h>
