@@ -62,6 +62,14 @@ it on their behalf by default. State the mechanical fact where it applies — th
 ruleset requires an approving review, the checks are green, a thread is
 unresolved — and stop there.
 
+Before you review, analyse, or act on a pull request, read what its reviewers
+have already said — the reviews and their state, the comments, the unresolved
+threads — not only its diff. A person reviewing sees these in the interface and
+cannot miss them; reading a diff from the command line does not show them, so
+without this step you can form a verdict a reviewer has already answered, or
+repeat a fix one has already asked for. Their findings are the first thing to
+read, not a last check, and a review is not finished while one is unaddressed.
+
 ## Where things are
 
 - `xymond/` the server daemons, `xymonnet/` the network probes, `client/` the
