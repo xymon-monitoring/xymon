@@ -257,6 +257,10 @@ _pick() {
 }
 _rows=\$(_pick)
 if [ -z "\$_rows" ]; then
+	# FSF_DF_EMPTY_RC: what this OS's df does with nothing left to report.
+	# Linux and OpenBSD exit 1; FreeBSD and NetBSD print nothing and exit 0
+	# (seen on Linux/GNU df, OpenBSD 7.9, FreeBSD 15.1, NetBSD 11.0).
+	[ "${FSF_DF_EMPTY_RC:-1}" = 0 ] && exit 0
 	echo "df: no file systems processed" >&2
 	exit 1
 fi
@@ -563,4 +567,19 @@ fsf_contract() {
 	_out=$(fsf_report "XYMONCLIENT_FS_EXCLUDE_TYPES=$FSF_ALL_TYPES")
 	fsf_assert_loud "$_out" \
 		"contract: excluding every filesystem must be loud, never a silent empty section"
+	# ... and it must say what happened. df has nothing to report then, and
+	# says so by its exit status alone: 1 on some systems, 0 on others. Neither
+	# is a df that failed, and the report must not call it one.
+	_df=$(fsf_section "$_out" df)
+	assert_contains "every filesystem excluded by the XYMONCLIENT_FS_* settings" "$_df" \
+		"contract: a disk report emptied by the settings says so"
+	assert_not_contains "no output" "$_df" \
+		"contract: ... and is not reported as a df that produced no output"
+	if [ "${FSF_INODE_FILTERED:-yes}" = yes ]; then
+		assert_equal "" "$(fsf_section "$_out" inode)" \
+			"contract: ... while the inode report stays empty, as one with nothing to count does"
+	fi
+	_out=$(fsf_report DF_FAIL=1)
+	assert_not_contains "every filesystem excluded" "$_out" \
+		"contract: a df that failed is not reported as an exclusion"
 }

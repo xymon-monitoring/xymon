@@ -5,14 +5,25 @@ emit_df() {
 	_kind="$1"; _label="$2"; shift 2
 	_out=`run_df "$@"`; _rc=$?
 	if [ -z "$_out" ]; then
-		# No rows at all. A non-zero exit is a collection failure - surface a
-		# one-line marker (no df header) so the server goes yellow, not green.
-		# A clean exit means nothing matched (e.g. an inode report whose
+		# No rows at all, for one of three reasons.
+		# Every mounted filesystem is left out by the XYMONCLIENT_FS_* settings:
+		# a choice, not a failure. The disk report says so, in the words of the
+		# AIX client; the inode report stays empty, as an inode report with
+		# nothing to count does. With DF_LOCAL_ONLY=yes the hard-blocking remote
+		# types count as left out too: df -l does not report them.
+		# Otherwise a non-zero exit is a collection failure - surface a one-line
+		# marker (no df header) so the server goes yellow, not green.
+		# Otherwise nothing matched this report (e.g. an inode report whose
 		# filesystems are all zfs, which are excluded): emit nothing, so the
 		# server's empty-report path stays green rather than rejecting a stray
-		# header-only row as "columns not found". FreeBSD's and NetBSD's df
-		# exit 0 then; OpenBSD's exits 1 and is reported as a failure above.
-		if [ "$_rc" -ne 0 ]; then
+		# header-only row as "columns not found".
+		_fex=`fs_excl_opt | sed -e 's/^-tno//' -e 's/,/ /g'`
+		[ "$DFLOCALONLY" = yes ] && _fex="$_fex $XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES"
+		if fs_all_excluded "$_fex"; then
+			if [ "$_kind" = disk ]; then
+				echo "$_label report collection failed: every filesystem excluded by the XYMONCLIENT_FS_* settings"
+			fi
+		elif [ "$_rc" -ne 0 ]; then
 			echo "$FS_SELF: df $_kind collection failed (status $_rc) with no output; reporting data as unavailable" >&2
 			echo "$_label report collection failed: df exited $_rc with no output"
 		fi
