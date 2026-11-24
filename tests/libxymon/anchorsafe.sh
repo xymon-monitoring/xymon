@@ -4,7 +4,7 @@
 # tests/libxymon/anchorsafe.sh
 #
 # anchorsafe() (lib/misc.c) reduces a group title to an <A NAME> jump target
-# (xymongen/pagegen.c). Unlike stripnonwords() it keeps a byte >= 0x80, so an
+# (xymongen/pagegen.c). It keeps a byte >= 0x80, so an
 # accented title stays distinct and a non-Latin one does not collapse to an
 # empty anchor -- while the HTML metacharacters < > & " still become one
 # underscore, keeping the result safe in a NAME= and a SUMMARY= attribute.
@@ -50,5 +50,24 @@ assert_equal "Web_Servers" "$(anchor "Web Servers")" \
 # HTML metacharacters still become a single underscore -- safe in NAME=/SUMMARY=.
 assert_equal "A_B_C" "$(anchor 'A<B>&"C')" \
 	"an HTML metacharacter was kept in the anchor instead of reduced to an underscore"
+
+# The 250-byte cap must not split a character. 249 'a' then "e'" (C3 A9): the
+# cap falls after the C3, and the anchor must drop the whole character, not end
+# in a lone 0xC3. One 'a' fewer (248) and the character fits and is kept whole.
+a249=$(awk 'BEGIN { for (i = 0; i < 249; i++) printf "a" }')
+a248=$(awk 'BEGIN { for (i = 0; i < 248; i++) printf "a" }')
+assert_equal "$a249" "$(anchor "${a249}${eacute}")" \
+	"the 250-byte cap split a character, leaving a partial sequence in the anchor"
+assert_equal "${a248}${eacute}" "$(anchor "${a248}${eacute}")" \
+	"a character that fits within the cap was dropped"
+
+# A non-UTF-8 run of 0x80-0xBF bytes (Latin-1 0xB0, degree sign) is not a split
+# UTF-8 character: the back-up is bounded to three and only drops a real lead
+# byte, so it must leave the run and the "lat" before it alone, keeping 250.
+b0=$(awk 'BEGIN { printf "lat"; for (i = 0; i < 300; i++) printf "%c", 176 }')
+b0got=$(anchor "$b0")
+[ "${#b0got}" -eq 250 ] \
+	|| fail "a non-UTF-8 0xB0 run was treated as a split character: anchor is ${#b0got} bytes, not 250"
+case "$b0got" in lat*) : ;; *) fail "the back-up ate into 'lat' before a non-UTF-8 0xB0 run" ;; esac
 
 pass "anchorsafe keeps a UTF-8 group title's bytes and reduces the HTML metacharacters"

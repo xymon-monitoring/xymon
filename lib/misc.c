@@ -190,46 +190,11 @@ char *skipwhitespace(char *l)
 }
 
 
-char *stripnonwords(char *l)
-{
-	/* Attempt to strip non-word data */
-	static char reduced[255];
-	char *inp;
-	int outidx;
-
-	reduced[0] = '\0';
-	if (!l) return (char *)reduced;
-
-	/* Must be in the set [a-zA-Z0-9_] ... */
-	for (inp=l, outidx=0; (*inp && (outidx < 250)); inp++) {
-		if ( ((*inp >= 'A') && (*inp <= 'Z')) ||
-		     ((*inp >= 'a') && (*inp <= 'z')) ||
-		     ((*inp >= '0') && (*inp <= '9'))  ) {
-			reduced[outidx++] = *inp;
-		}
-			/* Replace anything else with an underscore, */
-			/* compacting successive invalid chars into 1 */
-		else if ((outidx == 0) || (reduced[outidx - 1] != '_')) {
-			reduced[outidx++] = '_';
-		}
-	}
-
-	/* strip a final invalid char */
-	if ((outidx > 0) && (reduced[outidx-1] == '_')) {
-		reduced[outidx-1] = '\0';
-	}
-	else {
-		reduced[outidx] = '\0';
-	}
-
-	return (char *)reduced;
-}
-
-
 char *anchorsafe(char *l)
 {
-	/* Like stripnonwords(), but keeps a byte >= 0x80 instead of reducing it
-	   to an underscore. Its one use is an <A NAME> group-title jump target,
+	/* Reduce a group title to an <A NAME> jump target: keep [A-Za-z0-9] and
+	   any byte >= 0x80, and turn everything else into an underscore. Its one
+	   use is an <A NAME> group-title jump target,
 	   where a non-ASCII byte is a valid name character: carrying it keeps an
 	   accented title distinct ("R\xC3\xA9seau", not "R_seau") and a non-Latin
 	   one from collapsing to nothing. Everything else -- including the HTML
@@ -253,6 +218,20 @@ char *anchorsafe(char *l)
 		else if ((outidx == 0) || (reduced[outidx - 1] != '_')) {
 			reduced[outidx++] = '_';
 		}
+	}
+
+	/* The 250-byte cap can fall inside a multi-byte character. If the next
+	   input byte is a UTF-8 continuation byte (10xxxxxx), the kept prefix may
+	   end mid-character; back up over at most three continuation bytes and drop
+	   the lead byte, as do_acklog does. Bounded to three, and dropping the byte
+	   before only when it is a real lead byte (>= 0xC0), so a non-UTF-8 run of
+	   0x80-0xBF bytes (Latin-1, say) is left alone rather than eaten. */
+	if (((unsigned char)*inp & 0xc0) == 0x80) {
+		int back = outidx;
+
+		while ((back > 0) && ((outidx - back) < 3) &&
+		       (((unsigned char)reduced[back - 1] & 0xc0) == 0x80)) back--;
+		if ((back > 0) && ((unsigned char)reduced[back - 1] >= 0xc0)) outidx = back - 1;
 	}
 
 	/* strip a final invalid char */
