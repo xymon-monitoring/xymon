@@ -65,18 +65,18 @@ xymondigest: $(DIGESTOBJS) $(XYMONLIB)
 
 
 xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
-	$(CC) $(CFLAGS) -c xymon.c 
-	$(CC) $(CFLAGS) -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c ../lib/environ.c
-	$(CC) $(CFLAGS) -c ../lib/strfunc.c 
-	$(CC) $(CFLAGS) -c ../lib/errormsg.c
-	$(CC) $(CFLAGS) -c ../lib/stackio.c 
-	$(CC) $(CFLAGS) -c ../lib/timefunc.c 
-	$(CC) $(CFLAGS) -c ../lib/memory.c 
-	$(CC) $(CFLAGS) -c ../lib/sendmsg.c 
-	$(CC) $(CFLAGS) -c ../lib/holidays.c 
-	$(CC) $(CFLAGS) -c ../lib/rbtr.c 
-	$(CC) $(CFLAGS) -c ../lib/msort.c
-	$(CC) $(CFLAGS) -c ../lib/misc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c xymon.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c ../lib/environ.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/strfunc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/errormsg.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/stackio.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/timefunc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/memory.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/sendmsg.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/holidays.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/rbtr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/msort.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c ../lib/misc.c
 	ar cr xymonwin32.a environ.o strfunc.o errormsg.o stackio.o timefunc.o memory.o sendmsg.o holidays.o rbtr.o msort.o misc.o
 	ranlib xymonwin32.a || echo ""
 	$(CC) $(LDFLAGS) -o $@ xymon.o xymonwin32.a
@@ -86,7 +86,7 @@ xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/st
 # Default compilation rules
 ################################################
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f *.o *.a *~ $(PROGRAMS) $(CLIENTPROGRAMS)

@@ -59,7 +59,7 @@ install:
 	chmod 644 $(INSTALLROOT)$(INSTALLINCDIR)/include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/*.h
 
 test-endianness: test-endianness.c
-	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
+	$(CC) $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -o $@ $<
 
 $(XYMONLIB): $(XYMONLIBOBJS)
 	ar cr $(XYMONLIB) $(XYMONLIBOBJS)
@@ -82,46 +82,46 @@ $(XYMONCLIENTCOMMLIB): $(XYMONCLIENTCOMMLIBOBJS)
 	ranlib $(XYMONCLIENTCOMMLIB) || echo ""
 
 sendmsg.o: sendmsg.c xymontls.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ sendmsg.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ sendmsg.c
 
 xymontls.o: xymontls.c xymontls.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ xymontls.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ xymontls.c
 
 loadhosts.o: loadhosts.c loadhosts_file.c loadhosts_net.c
-	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ loadhosts.c
 
 eventlog.o: eventlog.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 notifylog.o: notifylog.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 acknowledgementslog.o: acknowledgementslog.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 headfoot.o: headfoot.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 loadalerts.o: loadalerts.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 matching.o: matching.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 sha1.o: sha1.c test-endianness
-	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
 rmd160c.o: rmd160c.c test-endianness
-	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
 environ.o: environ.c $(wildcard ../build/build-id)
-	$(CC) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
 
 environ-client.o: environ.c $(wildcard ../build/build-id)
-	$(CC) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONCLIENTHOME)\" -c -o $@ environ.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONCLIENTHOME)\" -c -o $@ environ.c
 
 color-client.o: color.c
-	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
 xymonloadhosts: loadhosts.c loadhosts_file.c loadhosts_net.c $(XYMONCOMMLIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c $(XYMONCOMMLIBS)

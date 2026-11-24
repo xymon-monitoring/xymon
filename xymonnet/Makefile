@@ -45,33 +45,33 @@ httpcookies.o: httpcookies.h
 xymonnetprobe: xymonnet.h contest.h httptest.h dns.h
 
 xymonnet.o: xymonnet.c ntpprobe.c udpquery.h
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
 
 udpquery.o: udpquery.c udpquery.h
 
 ldaptest.o: ldaptest.c
-	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
 
 httptest.o: httptest.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httptest.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httptest.c
 
 httpresult.o: httpresult.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httpresult.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ httpresult.c
 
 contest.o: contest.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ contest.c
 
 dns.o: dns.c
-	$(CC) $(CFLAGS) $(CARESINCDIR) -c -o $@ dns.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(CARESINCDIR) -c -o $@ dns.c
 
 dns2.o: dns2.c
-	$(CC) $(CFLAGS) $(CARESINCDIR) -c -o $@ dns2.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(CARESINCDIR) -c -o $@ dns2.c
 
 beastat: $(BEASTATOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB)
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(PCRELIBS)
 
 beastat.o: beastat.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
 xymonnetprobe: contest.c httptest.o dns.o dns2.o httpcookies.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
@@ -85,13 +85,13 @@ xymon-snmpcollect: xymon-snmpcollect.o $(XYMONCOMMLIB) $(XYMONTIMELIB)
 	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o $(SNMPLIBS) ../lib/libxymon.a $(XYMONCOMMLIBS) $(XYMONTIMELIBS)
 
 xymon-snmpcollect.o: xymon-snmpcollect.c
-	$(CC) $(CFLAGS) -I. $(SNMPINCDIR) -c -o $@ xymon-snmpcollect.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -I. $(SNMPINCDIR) -c -o $@ xymon-snmpcollect.c
 
 ################################################
 # Default compilation rules
 ################################################
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.sh: %.sh.DIST
 	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
