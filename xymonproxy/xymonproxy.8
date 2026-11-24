@@ -144,9 +144,10 @@ The number of messages dropped, because a connection to the
 Xymon server could not be established.
 
 .IP "Timeout details - sending to server"
-The number of messages dropped because the communication
-to the Xymon server timed out after a connection
-was established.
+The number of times a message was given up for one Xymon server
+because connecting to it, or sending the message, did not complete
+within the timeout. The message still goes to the servers listed
+after that one.
 
 .IP "Timeout details - recovered"
 When a timeout happens while sending the status message to

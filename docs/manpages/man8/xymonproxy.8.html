@@ -191,8 +191,9 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
   </dd>
   <dt id="Timeout~3"><a class="permalink" href="#Timeout~3">Timeout details -
     sending to server</a></dt>
-  <dd>The number of messages dropped because the communication to the Xymon
-      server timed out after a connection was established.
+  <dd>The number of times a message was given up for one Xymon server because
+      connecting to it, or sending the message, did not complete within the
+      timeout. The message still goes to the servers listed after that one.
     <p class="Pp"></p>
   </dd>
   <dt id="Timeout~4"><a class="permalink" href="#Timeout~4">Timeout details -
