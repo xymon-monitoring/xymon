@@ -13,7 +13,11 @@
 # check counts only where a worker listening on every address (--listen=:PORT)
 # is reached at 127.0.0.2, as on Linux, where all of 127/8 is loopback;
 # elsewhere it is reported as not checked. --listen=localhost:PORT takes
-# connections on 127.0.0.1:PORT, where /etc/hosts says so. A malformed
+# connections on 127.0.0.1:PORT, where /etc/hosts says so.
+# --listen=[::]:PORT takes connections on [::1]:PORT and none on
+# 127.0.0.1:PORT: an IPv6 listener takes IPv6 only, where the system default
+# would let it take IPv4 too (Linux, macOS). Not checked on a host without
+# ::1. A malformed
 # --listen (with --locatorid valid, so the listener is what reads it) and a
 # malformed --locatorid each stop it with a message, and no signal.
 # Connections are made by the xymon client, whose XYMON_TIMEOUT bounds them.
@@ -35,11 +39,11 @@ require_bin LOCATOR lib/xymonlocator
 . "$(dirname "$0")/../lib/xymond-daemon.sh"
 
 work=$(mktempdir)
-# Four distinct ports from free_port, which draws below the kernel's
+# Five distinct ports from free_port, which draws below the kernel's
 # ephemeral range: a port inside it can be held by an outgoing connection,
 # and a worker that cannot bind fails the test.
 taken=""
-for v in lport p1 p2 p3; do
+for v in lport p1 p2 p3 p4; do
 	while :; do
 		p=$(free_port) || fail "no free port for the locator and the workers"
 		case " $taken " in *" $p "*) continue ;; esac
@@ -126,6 +130,16 @@ else
 	partial="${partial:+$partial; }a name: /etc/hosts does not map localhost to 127.0.0.1"
 fi
 
+# Every IPv6 address: IPv6 connections, and no IPv4 ones
+if have_ipv6_loopback; then
+	worker --listen="[::]:$p4" --locatorid="[::1]:$p4"
+	listening "[::1]" "$p4" || fail "the worker did not listen on [::1]:$p4 with --listen=[::]:$p4: $(cat "$work/logs/rrd.log")"
+	! connects 127.0.0.1 "$p4" || fail "with --listen=[::]:$p4 the worker takes IPv4 connections on 127.0.0.1:$p4, not IPv6 only"
+	stop_worker
+else
+	partial="${partial:+$partial; }an IPv6 listener: this host has no ::1"
+fi
+
 # Malformed: a message and a plain exit, never a signal
 for args in "--listen=[::1]junk --locatorid=127.0.0.1:$p1" "--listen=127.0.0.1 --locatorid=127.0.0.1:$p1" \
 	   "--listen=127.0.0.1:$p1 --locatorid=127.0.0.1:junk"; do
@@ -143,5 +157,5 @@ for args in "--listen=[::1]junk --locatorid=127.0.0.1:$p1" "--listen=127.0.0.1 -
 	assert_contains "$want" "$(cat "$work/logs/rrd.log")" "the worker refused $args without saying why"
 done
 
-claim="a network worker listens on 127.1:PORT as before and on a name, and refuses a malformed --listen or --locatorid with a message"
+claim="a network worker listens on 127.1:PORT as before and on a name, takes IPv6 only on [::]:PORT, and refuses a malformed --listen or --locatorid with a message"
 if [ -n "$partial" ]; then pass_partial "$claim" "$partial"; else pass "$claim"; fi

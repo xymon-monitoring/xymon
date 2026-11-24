@@ -123,6 +123,10 @@ static int net_worker_listener(char *ipport)
 
 	opt = 1;
 	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	/* An IPv6 listener takes IPv6 only, as xymond's does (add_listener()),
+	   whatever the system default: left to the default, [::] would also take
+	   IPv4 on Linux and macOS and not on OpenBSD. */
+	if (laddr.ss_family == AF_INET6) setsockopt(lsocket, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
 
 	if (bind(lsocket, (struct sockaddr *)&laddr,
 		 (laddr.ss_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in)) == -1) {
