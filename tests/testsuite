@@ -10,14 +10,41 @@
 # Actions ($GITHUB_ACTIONS=true), plain human-readable output otherwise. Both
 # the CI workflow and a developer run the same code path.
 #
-# Usage: ./tests/testsuite        (from anywhere; resolves the repo root itself)
+# Usage: ./tests/testsuite                 (every test; from any cwd)
+#        ./tests/testsuite SELECTOR...      (only the tests a SELECTOR picks)
 #        make test
+#
+# A SELECTOR picks tests from those discovered, by glob against each test's
+# path (tests/xymonnet/tls-handshake-cpu.sh), that path without the tests/
+# prefix, its basename (tls-handshake-cpu.sh), or its stem (tls-handshake-cpu):
+# so 'xymonnet/*', '*cpu*' and 'tls-handshake-cpu' each pick that one test.
+# Selecting runs the picked tests under the same per-test watchdog as a full
+# run, so a single test run this way cannot outlive XYMON_TESTS_TIMEOUT and
+# leak a backgrounded child -- which running it straight as ./tests/<t>.sh,
+# with no runner, can. Naming tests that match nothing is an error, and a
+# selector cannot be combined with XYMON_TESTS_STRICT, whose coverage floor is
+# a property of the whole suite.
 #
 set -u
 
 # Resolve the repo root from this script's own location, so it works from any cwd.
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd) || exit 2
 cd "$root" || exit 2
+
+# -h/--help explains the selector; any other argument is taken as one and
+# matched against the discovered tests below.
+case ${1:-} in
+	-h|--help)
+		cat <<'USAGE'
+Usage: tests/testsuite [SELECTOR...]
+  No SELECTOR runs every discovered test. A SELECTOR is a glob matched against
+  each test's path, that path without the tests/ prefix, its basename, or its
+  stem -- e.g. 'xymonnet/*', '*cpu*', 'tls-handshake-cpu'. Picked tests run
+  under the same per-test watchdog as a full run. A selector cannot be combined
+  with XYMON_TESTS_STRICT. See tests/README.md.
+USAGE
+		exit 0 ;;
+esac
 
 if [ "${GITHUB_ACTIONS:-}" = "true" ]; then gh=1; else gh=0; fi
 
@@ -73,6 +100,55 @@ if [ -z "$tests" ]; then
 	exit 1
 fi
 
+# test_selected PATH SELECTOR... -- true when a selector picks PATH. Each
+# selector is a glob, tried against the full path, the path without the tests/
+# prefix, the basename, and the basename without .sh, so a test is named by any
+# of the forms a developer types. A glob (case) never expands against the
+# filesystem, so it matches the same here as it reads on the command line.
+test_selected() {
+	ts_path=$1; shift
+	ts_rel=${ts_path#tests/}
+	ts_base=${ts_path##*/}
+	ts_stem=${ts_base%.sh}
+	for ts_pat do
+		case $ts_path in $ts_pat) return 0 ;; esac
+		case $ts_rel  in $ts_pat) return 0 ;; esac
+		case $ts_base in $ts_pat) return 0 ;; esac
+		case $ts_stem in $ts_pat) return 0 ;; esac
+	done
+	return 1
+}
+
+# A selector run keeps only the discovered tests a command-line argument picks.
+# The empty-discovery check above ran first, over the whole set, so a lost +x
+# bit is still caught before a selector narrows things. tests/final/ is
+# narrowed the same way -- a focused run does not pull in the whole-suite
+# leftover checks unless a selector names one.
+if [ "$#" -gt 0 ]; then
+	sel_tests=''; sel_final=''
+	sel_oifs=$IFS
+	IFS='
+'
+	set -f
+	for t in $tests; do
+		if test_selected "$t" "$@"; then sel_tests="${sel_tests}${t}
+"; fi
+	done
+	for t in $finaltests; do
+		if test_selected "$t" "$@"; then sel_final="${sel_final}${t}
+"; fi
+	done
+	set +f
+	IFS=$sel_oifs
+	if [ -z "$sel_tests" ] && [ -z "$sel_final" ]; then
+		errline "no test matches: $* -- a selector is a glob on a test's path, basename or stem (e.g. xymonnet/* or tls-handshake-cpu); see tests/testsuite --help"
+		exit 1
+	fi
+	# Drop the one trailing newline each list was built with.
+	tests=${sel_tests%?}
+	finaltests=${sel_final%?}
+fi
+
 # A strict value the runner does not know is a config error, not a silent
 # off: XYMON_TESTS_STRICT=true would otherwise disable the floor while
 # reading as enabling it.
@@ -81,6 +157,14 @@ case ${XYMON_TESTS_STRICT:-} in
 	*)	errline "XYMON_TESTS_STRICT='${XYMON_TESTS_STRICT}' is not a switch this suite knows -- 1 enables, empty or 0 disables"
 		exit 1 ;;
 esac
+
+# A selector runs a subset; the coverage floor is a property of the whole
+# suite. The two do not combine -- refuse rather than report a floor met or
+# breached over a handful of hand-picked tests.
+if [ "$#" -gt 0 ] && [ "${XYMON_TESTS_STRICT:-}" = 1 ]; then
+	errline "a test selector runs a subset -- it cannot be combined with XYMON_TESTS_STRICT=1, whose coverage floor needs the whole suite"
+	exit 1
+fi
 
 # A test that never ends -- a peer that never answers, a write nobody reads --
 # would hold the run until the CI step's own timeout: the tests after it got no
