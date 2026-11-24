@@ -607,7 +607,9 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 						    &ignored, &group);
 
 				strcpy(p, bol);
-				levelstr = getcolumn(p, freecol);
+				/* The same for a free column the header does not have:
+				 * levelabs stays unset, and is not compared below. */
+				levelstr = ((freecol != -1) ? getcolumn(p, freecol) : NULL);
 				if (levelstr) {
 					unmeasured = (strcmp(levelstr, "-") == 0);
 					levelabs = atol(levelstr);
@@ -622,6 +624,12 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 				if (ignored) {
 					/* Forget about this one */
 				}
+				else if (capacol == -1) {
+					/* No capacity column, so nothing to hold this row against:
+					 * getcolumn(p, -1) is the row's first column, the device
+					 * name, and atol() of that is 0% used. Said once, after
+					 * the last row. */
+				}
 				else if (unmeasured && (levelpct == 100)) {
 					/* The client's unavailable-mount marker: "-" sizes because
 					 * nothing measured them, 100% so the column still goes red
@@ -633,7 +641,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
-				else if ( (abspanic && (levelabs <= paniclevel)) || 
+				else if ( (abspanic && (freecol != -1) && (levelabs <= paniclevel)) ||
 				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
 
@@ -650,7 +658,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
-				else if ( (abswarn && (levelabs <= warnlevel)) || 
+				else if ( (abswarn && (freecol != -1) && (levelabs <= warnlevel)) ||
 				          (!abswarn && (levelpct >= warnlevel)) ) {
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
 
@@ -664,6 +672,17 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
 					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
 
+					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
+				}
+
+				if (!ignored && (capacol != -1) && (freecol == -1) && (abswarn || abspanic)) {
+					/* A rule in units, and no column to read them from: say
+					 * so. Reading the first column instead gave 0 units free,
+					 * and a red filesystem that was not full. */
+					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
+
+					sprintf(msgline, "&yellow %s is checked in units free, and the report has no '%s' column\n", fsname, freehdr);
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
@@ -700,6 +719,16 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		errprintf("Host %s (%s) sent incomprehensible disk report - missing columnheaders '%s' and '%s'\n",
 			  hostname, osname(os), capahdr, mnthdr);
+	}
+	else if (capacol == -1) {
+		/* The mount column was found, the capacity column was not: no
+		   filesystem has been checked either */
+		diskcolor = COL_YELLOW;
+		sprintf(msgline, "&red Expected string (%s) not found in df output\n", capahdr);
+		addtobuffer(monmsg, msgline);
+
+		errprintf("Host %s (%s) sent incomprehensible disk report - missing columnheader '%s'\n",
+			  hostname, osname(os), capahdr);
 	}
 
 	/* Check for filesystems that must (not) exist */
@@ -814,7 +843,9 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 						    &ignored, &group);
 
 				strcpy(p, bol);
-				levelstr = getcolumn(p, freecol);
+				/* The same for a free column the header does not have:
+				 * levelabs stays unset, and is not compared below. */
+				levelstr = ((freecol != -1) ? getcolumn(p, freecol) : NULL);
 				if (levelstr) {
 					unmeasured = (strcmp(levelstr, "-") == 0);
 					levelabs = atol(levelstr);
@@ -829,6 +860,12 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 				if (ignored) {
 					/* Forget about this one */
 				}
+				else if (capacol == -1) {
+					/* No capacity column, so nothing to hold this row against:
+					 * getcolumn(p, -1) is the row's first column, the device
+					 * name, and atol() of that is 0% used. Said once, after
+					 * the last row. */
+				}
 				else if (unmeasured && (levelpct == 100)) {
 					/* The unavailable-mount marker, passed through by the
 					 * clients' inode reformatters -- same shape as in the
@@ -839,7 +876,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
-				else if ( (abspanic && (levelabs <= paniclevel)) || 
+				else if ( (abspanic && (freecol != -1) && (levelabs <= paniclevel)) ||
 				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (inodecolor < COL_RED) inodecolor = COL_RED;
 
@@ -856,7 +893,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
-				else if ( (abswarn && (levelabs <= warnlevel)) || 
+				else if ( (abswarn && (freecol != -1) && (levelabs <= warnlevel)) ||
 				          (!abswarn && (levelpct >= warnlevel)) ) {
 					if (inodecolor < COL_YELLOW) inodecolor = COL_YELLOW;
 
@@ -870,6 +907,17 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
 					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
 
+					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
+				}
+
+				if (!ignored && (capacol != -1) && (freecol == -1) && (abswarn || abspanic)) {
+					/* A rule in units, and no column to read them from: say
+					 * so. Reading the first column instead gave 0 units free,
+					 * and a red filesystem that was not full. */
+					if (inodecolor < COL_YELLOW) inodecolor = COL_YELLOW;
+
+					sprintf(msgline, "&yellow <!-- ID=%s --> %s is checked in units free, and the report has no '%s' column\n", fsname, fsname, freehdr);
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
@@ -902,6 +950,16 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 			errprintf("Host %s (%s) sent incomprehensible inode report - missing columnheaders '%s' and '%s'\n%s\n",
 				  hostname, osname(os), capahdr, mnthdr, dfstr);
 		}
+	}
+	else if (capacol == -1) {
+		/* The mount column was found, the capacity column was not: no
+		   filesystem has been checked either */
+		inodecolor = COL_YELLOW;
+		sprintf(msgline, "&red Expected string (%s) not found in df output\n", capahdr);
+		addtobuffer(monmsg, msgline);
+
+		errprintf("Host %s (%s) sent incomprehensible inode report - missing columnheader '%s'\n%s\n",
+			  hostname, osname(os), capahdr, dfstr);
 	}
 
 	/* Check for filesystems that must (not) exist */

@@ -1,0 +1,14 @@
+xymond -- a disk or inode report without an expected column turns yellow
+------------------------------------------------------------------------
+
+Concerned: a host whose disk or inode report names a column otherwise
+than xymond expects for its operating system, which a locally changed
+client script can do. A capacity column that was not found was read as 0%
+used, and the status stayed green; it is now yellow, with "Expected
+string (...) not found in df output". A free column that was not found
+was read as 0 units free: a rule in units (DISK / 1000U 500U) was always
+red. It is now yellow, and the status says which column the rule needs.
+
+Nothing to do when these statuses are unchanged after the upgrade. For
+one that turns yellow, make the client write the column name the status
+asks for; rules in percent do not need the free column.
