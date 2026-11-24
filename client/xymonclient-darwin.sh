@@ -451,7 +451,15 @@ else
 	echo "xymonclient-darwin: no filesystems survived the mount filter; check XYMONCLIENT_FS_* settings" >&2
 	_out=""
 fi
-emit_df disk Disk
+# Nothing survived the filter and mount(8) does list filesystems: the settings
+# left every one out. That is a choice, not a df that failed, and the report
+# says so in the words of the AIX client. A mount list that cannot be read
+# keeps the failure marker.
+if [ -z "$FILESYSTEMS" ] && [ -z "$FILESYSTEMS_REMOTE" ] && [ -n "`mount 2>/dev/null`" ]; then
+	echo "Disk report collection failed: every filesystem excluded by the XYMONCLIENT_FS_* settings"
+else
+	emit_df disk Disk
+fi
 
 echo "[inode]"
 # Empty list here is legitimate (all-APFS Mac: nothing inode-limited exists),

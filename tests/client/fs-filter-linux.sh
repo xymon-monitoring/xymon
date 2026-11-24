@@ -184,5 +184,13 @@ _out=$(cd "$TMP" && env DF_FAIL=1 XYMONCLIENT_FS_DF_LOCAL_ONLY=no \
 	/bin/sh "$NOMOUNTS" 2>/dev/null || true)
 fsf_assert_loud "$_out" \
 	"a df failure with no readable mount list must still be loud"
+# ... and with every type excluded: without the mount list, the client cannot
+# tell an exclusion from a failure, and must not claim the first.
+_out=$(cd "$TMP" && env "XYMONCLIENT_FS_EXCLUDE_TYPES=$FSF_ALL_TYPES" \
+	/bin/sh "$NOMOUNTS" 2>/dev/null || true)
+fsf_assert_loud "$_out" \
+	"an empty report with no readable mount list must still be loud"
+assert_not_contains "every filesystem excluded" "$_out" \
+	"an empty report is not called an exclusion when the mount list cannot be read"
 
 pass "xymonclient-linux.sh: the FS filter contract, nodev exclusions, and the hard-block guard -- Linux df/mount output replayed from fixtures"

@@ -69,6 +69,8 @@ autofs /pseudo/autofs local inode'
 FSF_COMBINED="$TMP/df-section.sh"
 fsf_extract "$FSF_COMBINED"
 fsf_write_fixture
+# With nothing left to report this df prints nothing and exits 0 (seen on 15.1).
+FSF_DF_EMPTY_RC=0
 fsf_write_stub
 # The client reads the mount list on every DF_LOCAL_ONLY=no cycle now that
 # hard-blocking mounts are guarded (#316); answer it from the fixture rather
