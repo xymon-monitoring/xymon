@@ -1,0 +1,13 @@
+xymonserver.cfg -- the server sends to itself over loopback
+-----------------------------------------------------------
+
+On a new server, the server's programs and its own client send to xymond over
+127.0.0.1, so it keeps reporting on itself when a network interface goes away.
+An upgrade keeps the existing configuration; to switch, set XYMSRV="127.0.0.1"
+in xymonserver.cfg and prefix the [xymonclient] command in tasks.cfg with "env
+XYMSRV=127.0.0.1". Remote clients are unchanged.
+
+Once switched, everything the server's own programs send arrives from
+127.0.0.1, its statuses about other hosts included. A server started with
+--status-senders, --maint-senders or --www-senders must list 127.0.0.1 in each
+of them; the shipped --admin-senders already does.
