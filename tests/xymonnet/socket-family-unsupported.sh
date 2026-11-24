@@ -49,12 +49,23 @@ __attribute__((used)) static struct { const void *replacement, *original; } inte
 #else
 #include <dlfcn.h>
 
+/* The libc symbol behind socket(). NetBSD's <sys/socket.h> renames socket to
+ * __socket30, so the function below is __socket30 there, and libc's "socket"
+ * is a compatibility function that calls __socket30: looking that one up
+ * gave this function back to itself, and the first IPv4 socket recursed until
+ * the stack was gone. */
+#ifdef __NetBSD__
+#define LIBC_SOCKET "__socket30"
+#else
+#define LIBC_SOCKET "socket"
+#endif
+
 int socket(int domain, int type, int protocol)
 {
 	static int (*real)(int, int, int) = NULL;
 
 	if (domain == AF_INET6) { errno = EAFNOSUPPORT; return -1; }
-	if (!real) real = (int (*)(int, int, int))dlsym(RTLD_NEXT, "socket");
+	if (!real) real = (int (*)(int, int, int))dlsym(RTLD_NEXT, LIBC_SOCKET);
 	return real(domain, type, protocol);
 }
 #endif
@@ -70,12 +81,20 @@ preload() {
 	LD_PRELOAD="$work/noinet6.so" DYLD_INSERT_LIBRARIES="$work/noinet6.so" "$@"
 }
 
-# Does preloading it take effect here at all?
+# Does preloading it take effect here at all, and does it still hand the other
+# families to libc? The second half is what xymonnet's IPv4 test needs: a
+# library that refuses IPv6 and then cannot reach the real socket() kills the
+# run it is loaded into, which reads as xymonnet's failure.
 printf '%s\n' '#include <sys/types.h>' '#include <sys/socket.h>' '#include <errno.h>' \
-	'int main(void) { return (socket(AF_INET6, SOCK_STREAM, 0) == -1) && (errno == EAFNOSUPPORT) ? 0 : 1; }' \
+	'int main(void) {' \
+	'	if (!((socket(AF_INET6, SOCK_STREAM, 0) == -1) && (errno == EAFNOSUPPORT))) return 1;' \
+	'	return (socket(AF_INET, SOCK_STREAM, 0) == -1) ? 2 : 0;' \
+	'}' \
 	> "$work/probe.c"
 "$CC" -o "$work/probe" "$work/probe.c" || skip "cannot build the preload probe with $CC"
-preload "$work/probe" 2>/dev/null || skip "a preloaded library does not replace socket() here"
+# In a subshell, so that a probe killed by a signal is not reported by this shell.
+(preload "$work/probe") >/dev/null 2>&1 \
+	|| skip "a preloaded library does not replace socket() here, or does not pass IPv4 through"
 
 mkdir -p "$work/home/etc"
 cp "$root/xymonnet/protocols.cfg" "$work/home/etc/protocols.cfg"
