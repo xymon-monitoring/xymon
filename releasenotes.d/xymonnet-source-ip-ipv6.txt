@@ -1,0 +1,5 @@
+xymonnet -- take an IPv6 source address for --source-ip and a test's "@ADDRESS"
+-------------------------------------------------------------------------------
+Both were IPv4 only: an IPv6 --source-ip was refused, and a test's "@ADDRESS"
+never bound for an IPv6 host. Both now accept either family and bind a source
+for tests of its own family. A site that sets an IPv4 source sees no change.
