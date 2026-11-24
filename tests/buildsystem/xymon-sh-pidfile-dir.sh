@@ -57,8 +57,9 @@ rule=$(sed -n '/^xymon\.sh: xymon\.sh\.DIST/,/^$/p' "$mk")
 [ -n "$rule" ] || fail "cannot find the xymon.sh rule in xymond/Makefile"
 
 for var in $(grep -oE '@[A-Z_]+@' "$script" | sort -u); do
+	name=${var#@}; name=${name%@}
 	case $rule in
-		*"$var"*) ;;
+		*"$name"*) ;;
 		*) fail "xymon.sh uses $var but the Makefile rule does not substitute it: the installed script would keep it literal" ;;
 	esac
 done
@@ -100,14 +101,16 @@ grep -qE '^XYMONCLIENTRUNDIR="@XYMONCLIENTRUNDIR@"' "$clientcfgdist" \
 
 # Every placeholder the client configuration uses must be substituted by the
 # rule that generates it, or the installed xymonclient.cfg keeps the literal
-# @VAR@ and hands it to every client program as a path.
+# @VAR@ and hands it to every client program as a path. The rule names each
+# to build/subst.sh, or writes it with sed (s!@VAR@!...!).
 clientmk="$ROOT/client/Makefile"
 [ -f "$clientmk" ] || fail "missing $clientmk"
 crule=$(grep -F 'xymonclient.cfg.DIST' "$clientmk")
 [ -n "$crule" ] || fail "cannot find the line that generates xymonclient.cfg in client/Makefile"
 for var in $(grep -oE '@[A-Z_]+@' "$clientcfgdist" | sort -u); do
+	name=${var#@}; name=${name%@}
 	case $crule in
-		*"$var"*) ;;
+		*"$var"*|*"subst.sh"*" $name"*) ;;
 		*) fail "xymonclient.cfg.DIST uses $var but client/Makefile does not substitute it: the installed file would keep it literal and hand it to every client program as a path" ;;
 	esac
 done
@@ -116,7 +119,7 @@ done
 # raw knob: otherwise a default build would write XYMONCLIENTRUNDIR="" rather
 # than naming the client's log directory.
 case $crule in
-	*'@XYMONCLIENTRUNDIR@!$(XYMONCLIENTRUNDIRSUB)'*) ;;
+	*'@XYMONCLIENTRUNDIR@!$(XYMONCLIENTRUNDIRSUB)'*|*"XYMONCLIENTRUNDIR='\$(XYMONCLIENTRUNDIRSUB)'"*) ;;
 	*) fail "client/Makefile does not substitute @XYMONCLIENTRUNDIR@ with its resolved value, so a default build would not name \$XYMONCLIENTLOGS" ;;
 esac
 
@@ -172,8 +175,9 @@ srule=$(grep -F 'etcfiles/xymonserver.cfg.DIST' "$mk")
 [ -n "$srule" ] || fail "cannot find the line that generates xymonserver.cfg in xymond/Makefile"
 
 for var in $(grep -oE '@[A-Z_]+@' "$servercfg" | sort -u); do
+	name=${var#@}; name=${name%@}
 	case $srule in
-		*"$var"*) ;;
+		*"$name"*) ;;
 		*) fail "xymonserver.cfg.DIST uses $var but the Makefile rule does not substitute it: the installed file would keep it literal and hand it to every program as a path" ;;
 	esac
 done

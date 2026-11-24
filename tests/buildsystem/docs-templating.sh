@@ -35,13 +35,17 @@ for f in Makefile install.html xymon-apacheconf.txt.DIST; do
 done
 
 work=$(mktempdir)
-cp "$DOCS/Makefile" "$DOCS/install.html" "$DOCS/xymon-apacheconf.txt.DIST" "$work/"
-conf="$work/xymon-apacheconf.txt"
+# Mirror the real layout -- docs/ beside build/ -- so the recipe's
+# "../build/subst.sh" resolves to the copied helper.
+mkdir -p "$work/docs" "$work/build"
+cp "$DOCS/Makefile" "$DOCS/install.html" "$DOCS/xymon-apacheconf.txt.DIST" "$work/docs/"
+cp "$ROOT/build/subst.sh" "$work/build/"
+conf="$work/docs/xymon-apacheconf.txt"
 
 # generate URL -- run the real recipe, the web pages at URL
 generate() {
 	rm -f "$conf"
-	"$XYMON_MAKE" -C "$work" xymon-apacheconf.txt \
+	"$XYMON_MAKE" -C "$work/docs" xymon-apacheconf.txt \
 		INSTALLETCDIR=/etc/xymon INSTALLWWWDIR=/var/www/xymon \
 		CGIDIR=/cgi SECURECGIDIR=/secure-cgi \
 		XYMONHOSTURL="$1" XYMONCGIURL=/mon-cgi SECUREXYMONCGIURL=/mon-seccgi \
@@ -97,8 +101,8 @@ done
 leftover=$(grep -oE '@[A-Z_]+@' "$DOCS/install.html" || true)
 [ -z "$leftover" ] || fail "install.html is read before configure runs, but carries placeholders: $leftover"
 
-"$XYMON_MAKE" -C "$work" clean >"$work/clean.log" 2>&1 \
+"$XYMON_MAKE" -C "$work/docs" clean >"$work/clean.log" 2>&1 \
 	|| fail "make clean failed: $(cat "$work/clean.log")"
-assert_file_exists "$work/install.html" "make clean deleted install.html, which is not generated"
+assert_file_exists "$work/docs/install.html" "make clean deleted install.html, which is not generated"
 
 pass "xymon-apacheconf.txt carries the configured paths and URLs, and install.html is a plain file make clean keeps"
