@@ -1,0 +1,5 @@
+msgcache, xymonfetch -- pull client data over IPv6
+--------------------------------------------------
+msgcache's --listen and xymonfetch's pulldata address were IPv4 only; both
+now take IPv6 and names. A sender is checked against the IPv6 entries of the
+access lists too, so a client reporting from its IPv6 address is let through.
