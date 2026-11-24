@@ -17,6 +17,8 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -67,7 +69,76 @@ pcre2_code *multilineregex(const char *pattern)
 	return compileregex_opts(pattern, PCRE2_CASELESS|PCRE2_MULTILINE);
 }
 
-int matchregex(const char *needle, pcre2_code *pcrecode)
+/*
+ * A negative pcre2_match() result other than "no match" is a real error: an
+ * invalid UTF byte under a (*UTF) pattern, or the match limit a pathological
+ * pattern hit. The caller still gets "no match", so a broken rule does not stop
+ * the run, but the error is logged, or a rule that never matches leaves no trace.
+ *
+ * A rule that fails does so on every evaluation, and analysis.cfg's LOG rules
+ * are evaluated once per line of every client's log excerpt. So a pattern is
+ * reported at most once per MATCHERR_INTERVAL seconds, with the number of
+ * failures left out since its last report. Patterns are told apart by their
+ * compiled code; with more than MATCHERR_SLOTS of them failing inside one
+ * interval, the ones that find no slot are counted and reported together.
+ * A pattern freed and another compiled at its address inside the interval is
+ * counted under the first until the next report, which names the second.
+ *
+ * "name" is the pattern as it was written, where the caller has it. The clock
+ * is getcurrenttime(), so the test can move it.
+ */
+#define MATCHERR_INTERVAL 60
+#define MATCHERR_SLOTS 16
+
+static void matcherror(pcre2_code *pcrecode, int errcode, const char *name)
+{
+	static struct {
+		pcre2_code *code;
+		int errcode;
+		time_t logged;
+		unsigned long skipped;
+	} seen[MATCHERR_SLOTS];
+	static unsigned long unslotted = 0;
+	PCRE2_UCHAR errbuf[120];
+	char more[120];
+	time_t now = getcurrenttime(NULL);
+	int i, slot = -1;
+
+	for (i = 0; (i < MATCHERR_SLOTS); i++) {
+		if ((seen[i].code == pcrecode) && (seen[i].errcode == errcode)) {
+			if ((now - seen[i].logged) < MATCHERR_INTERVAL) { seen[i].skipped++; return; }
+			slot = i;
+			break;
+		}
+		/* A slot not reported within the interval can be taken over */
+		if ((slot == -1) && ((now - seen[i].logged) >= MATCHERR_INTERVAL)) slot = i;
+	}
+
+	if (slot == -1) { unslotted++; return; }
+
+	if ((seen[slot].code != pcrecode) || (seen[slot].errcode != errcode)) {
+		seen[slot].code = pcrecode;
+		seen[slot].errcode = errcode;
+		seen[slot].skipped = 0;
+	}
+
+	if (pcre2_get_error_message(errcode, errbuf, sizeof(errbuf)) < 0) errbuf[0] = '\0';
+	more[0] = '\0';
+	if (seen[slot].skipped) snprintf(more, sizeof(more), ", and %lu more times since the last report", seen[slot].skipped);
+
+	if (name) errprintf("Regexp match failed for '%s' (%d: %s), taken as no match%s\n", name, errcode, errbuf, more);
+	else errprintf("Regexp match failed (%d: %s), taken as no match%s\n", errcode, errbuf, more);
+
+	if (unslotted) {
+		errprintf("Regexp match failed %lu more times, for other patterns\n", unslotted);
+		unslotted = 0;
+	}
+
+	seen[slot].logged = now;
+	seen[slot].skipped = 0;
+}
+
+static int matchregex_named(const char *needle, pcre2_code *pcrecode, const char *name)
 {
 	pcre2_match_data *ovector;
 	int result;
@@ -77,7 +148,13 @@ int matchregex(const char *needle, pcre2_code *pcrecode)
 	ovector = pcre2_match_data_create(30, NULL);
 	result = pcre2_match(pcrecode, needle, strlen(needle), 0, 0, ovector, NULL);
 	pcre2_match_data_free(ovector);
+	if ((result < 0) && (result != PCRE2_ERROR_NOMATCH)) matcherror(pcrecode, result, name);
 	return (result >= 0);
+}
+
+int matchregex(const char *needle, pcre2_code *pcrecode)
+{
+	return matchregex_named(needle, pcrecode, NULL);
 }
 
 void freeregex(pcre2_code *pcrecode)
@@ -144,7 +221,7 @@ int namematch(const char *needle, char *haystack, pcre2_code *pcrecode)
 
 	if (pcrecode) {
 		/* Do regex matching. The regex has already been compiled for us. */
-		return matchregex(needle, pcrecode);
+		return matchregex_named(needle, pcrecode, haystack);
 	}
 
 	if (strcmp(haystack, "*") == 0) {
@@ -188,7 +265,7 @@ int patternmatch(char *datatosearch, char *pattern, pcre2_code *pcrecode)
 {
 	if (pcrecode) {
 		/* Do regex matching. The regex has already been compiled for us. */
-		return matchregex(datatosearch, pcrecode);
+		return matchregex_named(datatosearch, pcrecode, pattern);
 	}
 
 	if (strcmp(pattern, "*") == 0) {
