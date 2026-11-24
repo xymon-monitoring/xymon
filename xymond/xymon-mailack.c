@@ -22,6 +22,27 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
+/*
+ * Replace control bytes (CR, LF, NUL, TAB and the like) in a decoded header
+ * with spaces, so a byte a decoder turned into a newline cannot inject an extra
+ * line into the xymondack message, and cap the length -- not splitting a
+ * trailing UTF-8 character at the cap -- so the result stays under the ack
+ * log's line length.
+ */
+static void cleantext(char *s, int maxlen)
+{
+	int i;
+
+	if (!s) return;
+	for (i = 0; s[i]; i++)
+		if (((unsigned char)s[i] < 0x20) || ((unsigned char)s[i] == 0x7f)) s[i] = ' ';
+	if (i > maxlen) {
+		int floor = (maxlen > 3) ? (maxlen - 3) : 0;
+		while ((maxlen > floor) && (((unsigned char)s[maxlen] & 0xc0) == 0x80)) maxlen--;
+		s[maxlen] = '\0';
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	strbuffer_t *inbuf;
@@ -30,6 +51,7 @@ int main(int argc, char *argv[])
 	char *returnpathline = NULL;
 	char *fromline = NULL;
 	char *firsttxtline = NULL;
+	char **lastheader = NULL;
 	int inheaders = 1;
 	char *p;
 	pcre2_code *subjexp;
@@ -59,6 +81,9 @@ int main(int argc, char *argv[])
 	initfgets(stdin);
 	inbuf = newstrbuffer(0);
 	while (unlimfgets(inbuf, stdin)) {
+		int cont = (inheaders && (STRBUFLEN(inbuf) > 0) &&
+			    ((*STRBUF(inbuf) == ' ') || (*STRBUF(inbuf) == '\t')));
+
 		sanitize_input(inbuf, 0, 0);
 
 		if (!inheaders) {
@@ -81,13 +106,28 @@ int main(int argc, char *argv[])
 			continue;	/* We don't care about the rest of the message body */
 		}
 
+		if (cont && lastheader && *lastheader) {
+			/* RFC 5322 folded header: append this line to the one being built,
+			 * but stop once it reaches the ack line length -- a hostile message
+			 * can fold a header into very many lines, and merging each would be
+			 * O(n^2). */
+			if (strlen(*lastheader) < MAX_LINE_LEN) {
+				char *merged = (char *)malloc(strlen(*lastheader) + STRBUFLEN(inbuf) + 2);
+				sprintf(merged, "%s %s", *lastheader, STRBUF(inbuf));
+				xfree(*lastheader);
+				*lastheader = merged;
+			}
+			continue;
+		}
+
 		/* See if we're at the end of the mail headers */
 		if (inheaders && (STRBUFLEN(inbuf) == 0)) { inheaders = 0; continue; }
 
 		/* Is it one of those we want to keep ? */
-		if (strncasecmp(STRBUF(inbuf), "return-path:", 12) == 0) returnpathline = strdup(skipwhitespace(STRBUF(inbuf)+12));
-		else if (strncasecmp(STRBUF(inbuf), "from:", 5) == 0)    fromline = strdup(skipwhitespace(STRBUF(inbuf)+5));
-		else if (strncasecmp(STRBUF(inbuf), "subject:", 8) == 0) subjectline = strdup(skipwhitespace(STRBUF(inbuf)+8));
+		if (strncasecmp(STRBUF(inbuf), "return-path:", 12) == 0) { returnpathline = strdup(skipwhitespace(STRBUF(inbuf)+12)); lastheader = &returnpathline; }
+		else if (strncasecmp(STRBUF(inbuf), "from:", 5) == 0)    { fromline = strdup(skipwhitespace(STRBUF(inbuf)+5)); lastheader = &fromline; }
+		else if (strncasecmp(STRBUF(inbuf), "subject:", 8) == 0) { subjectline = strdup(skipwhitespace(STRBUF(inbuf)+8)); lastheader = &subjectline; }
+		else lastheader = NULL;
 	}
 	freestrbuffer(inbuf);
 
@@ -96,6 +136,11 @@ int main(int argc, char *argv[])
 		dbgprintf("Subject-line not found\n");
 		return 1;
 	}
+
+	/* Decode RFC 2047 encoded-words in the Subject before the cookie, DELAY
+	 * and MSG regexes read it: a fully-encoded subject keeps no literal space
+	 * for the cookie pattern and the ack would otherwise be dropped. */
+	subjectline = rfc2047_decode(subjectline);
 
 	/* Get the alert cookie */
 	subjexp = pcre2_compile(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &err, &errofs, NULL);
@@ -155,11 +200,17 @@ int main(int argc, char *argv[])
 
 	/* Use the "return-path:" header if we didn't see a From: line */
 	if ((fromline == NULL) && returnpathline) fromline = returnpathline;
+	if (fromline) fromline = rfc2047_decode(fromline);
 	if (fromline) {
 		/* Remove '<' and '>' from the fromline - they mess up HTML */
 		while ((p = strchr(fromline, '<')) != NULL) *p = ' ';
 		while ((p = strchr(fromline, '>')) != NULL) *p = ' ';
 	}
+
+	/* Scrub control bytes a decode may have produced, before they reach the
+	 * xymondack message (a decoded newline would forge an "Acked by:" line). */
+	if (fromline) cleantext(fromline, 4000);
+	if (firsttxtline) cleantext(firsttxtline, 4000);
 
 	/* Setup the acknowledge message */
 	if (duration == 0) duration = 60;	/* Default: Ack for 60 minutes */

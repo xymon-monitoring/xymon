@@ -75,9 +75,94 @@ char *base64encode(unsigned char *buf)
 	return result;
 }
 
+/* Hex digit value, or -1 for a non-hex character. */
+static int hexval(int c)
+{
+	if ((c >= '0') && (c <= '9')) return c - '0';
+	if ((c >= 'A') && (c <= 'F')) return c - 'A' + 10;
+	if ((c >= 'a') && (c <= 'f')) return c - 'a' + 10;
+	return -1;
+}
+
+/*
+ * RFC 2047: decode the =?charset?B|Q?text?= encoded-words in a single,
+ * already-unfolded header value, leaving the runs between them literal. The
+ * charset is parsed only to step over it -- the decoded bytes are carried as
+ * they are (Xymon stores bytes; the pages declare their charset via
+ * HTMLCONTENTTYPE). Whitespace lying entirely between two adjacent
+ * encoded-words is dropped, per RFC 2047 6.2. A word that does not parse (bad
+ * syntax, an unknown encoding letter, a bad "=XX") is left verbatim. Returns a
+ * malloc'd NUL-terminated string the caller xfree()s; its length is
+ * <= strlen(hdr), because B shrinks 4->3 and Q shrinks "=XX"->1 and the word
+ * framing is pure overhead -- so the one up-front malloc never overflows.
+ */
+char *rfc2047_decode(char *hdr)
+{
+	char *result, *outp;
+	const char *p;
+	int lastwasword = 0;
+
+	if (!hdr) return strdup("");
+	result = malloc(strlen(hdr) + 1);
+	outp = result;
+	p = hdr;
+
+	while (*p) {
+		const char *ws = p, *w;
+		const char *q, *txt, *end;
+		char encletter;
+
+		while ((*p == ' ') || (*p == '\t')) p++;	/* a run of whitespace */
+		if (!*p) break;
+
+		/* =?charset?E?text?= : E is one letter, text has no '?' until "?=" */
+		if ((p[0] == '=') && (p[1] == '?') &&
+		    (q = strchr(p+2, '?')) != NULL && (q[1] != '\0') && (q[2] == '?') &&
+		    (end = strstr(q+3, "?=")) != NULL) {
+			encletter = q[1];
+			txt = q+3;
+			if ((encletter == 'B') || (encletter == 'b') ||
+			    (encletter == 'Q') || (encletter == 'q')) {
+				/* whitespace between two words is dropped; otherwise kept */
+				if (!lastwasword) for (w = ws; w < p; w++) *outp++ = *w;
+				if ((encletter == 'B') || (encletter == 'b')) {
+					char *word = malloc((size_t)(end - txt) + 1), *dec, *d;
+					memcpy(word, txt, (size_t)(end - txt));
+					word[end - txt] = '\0';
+					dec = base64decode((unsigned char *)word);
+					for (d = dec; *d; d++) *outp++ = *d;
+					xfree(dec);
+					xfree(word);
+				}
+				else {	/* Q: '_' -> space, "=XX" -> byte, else literal */
+					for (w = txt; w < end; w++) {
+						if (*w == '_') *outp++ = ' ';
+						else if ((*w == '=') && (w+2 < end)) {
+							int h = hexval((unsigned char)w[1]), l = hexval((unsigned char)w[2]);
+							if ((h >= 0) && (l >= 0)) { *outp++ = (char)((h << 4) | l); w += 2; }
+							else *outp++ = *w;
+						}
+						else *outp++ = *w;
+					}
+				}
+				p = end + 2;
+				lastwasword = 1;
+				continue;
+			}
+		}
+
+		/* not an encoded-word: emit the skipped whitespace, then one byte */
+		for (w = ws; w < p; w++) *outp++ = *w;
+		*outp++ = *p++;
+		lastwasword = 0;
+	}
+	*outp = '\0';
+	return result;
+}
+
 char *base64decode(unsigned char *buf)
 {
-	static short bval[128] = { 0, };
+	static short bval[256] = { 0, };
 	static short bvalinit = 0;
 	int n0, n1, n2, n3;
 

@@ -1,0 +1,12 @@
+xymon-mailack -- decode RFC 2047 encoded-words in a reply's headers
+-------------------------------------------------------------------
+
+An acknowledgement sent by replying to an alert mail now has the From and
+Subject headers MIME-decoded. A non-ASCII acknowledger name or message text,
+which a mail client sends as an RFC 2047 encoded-word (=?utf-8?...?=), is
+decoded to its bytes and shows as written on the status page instead of as the
+raw =?...?= wrapper. A subject a client encoded in full is decoded before the
+alert cookie is matched, so such a reply is acknowledged rather than silently
+dropped. The bytes are carried under the charset the pages declare
+(HTMLCONTENTTYPE, UTF-8 by default); a reply in another charset is not
+converted. The message body is not yet decoded.

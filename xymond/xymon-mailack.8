@@ -30,6 +30,18 @@ or you can just enter it in the e-mail as the first non-blank line of
 text in the mail (a "delay=N" line is ignored when looking for the
 message text).
 
+.PP
+The \fBFrom:\fR and \fBSubject:\fR headers are decoded before use: an
+RFC 2047 encoded-word (\fB=?charset?B?...?=\fR or \fB=?charset?Q?...?=\fR),
+how a mail client carries a non-ASCII name or subject, is decoded to its bytes,
+so an accented acknowledger name or message text shows as written on the status
+page. A fully encoded subject is decoded before the alert cookie is looked for,
+so such a reply is acknowledged rather than ignored. The decoded bytes are
+shown as they are, under the charset the web pages declare
+(\fBHTMLCONTENTTYPE\fR, UTF-8 by default); a reply in another charset is
+carried through but not converted. The message body's transfer-encoding and
+MIME structure are not decoded.
+
 .SH USE WITH PROCMAIL
 To setup xymon\-mailack, create a \fB.procmailrc\fR file in
 the xymon-users home-directory with the following contents:
