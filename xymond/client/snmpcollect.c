@@ -22,7 +22,7 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 				void *hinfo, char *sender, time_t timestamp,
 				char *clientdata)
 {
-	void *ns1var, *ns1sects;
+	void *ns1var = NULL, *ns1sects = NULL;
 	char *onemib;
 	char *mibname;
 	char fromline[1024], msgline[1024];
