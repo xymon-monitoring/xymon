@@ -67,6 +67,9 @@ grep -q '/etc/sysconfig/xymonlaunch' "$unit" \
 grep -q '^RuntimeDirectory=xymon$' "$unit" \
 	|| fail "the unit lost RuntimeDirectory=xymon, which provisions the runtime dir for a standalone install"
 
+grep -q '^SendSIGKILL=no$' "$unit" \
+	|| fail "the unit lost SendSIGKILL=no, which keeps a task still writing its checkpoint from being SIGKILLed when a stop times out"
+
 # ---- INSTALLSYSTEMDDIR unset: nothing is installed --------------------------
 "$XYMON_MAKE" -C "$ROOT" -f build/Makefile.rules install-systemd \
 	INSTALLROOT="$work/noop" INSTALLSYSTEMDDIR= \
