@@ -152,7 +152,9 @@ or a host name, resolved to its IPv4 address if it has one; an IPv6 address
 goes in brackets, as [2001:db8::2]:1985. The worker options are:
 
 .IP "\fB--listen\fR=\fIIP:PORT\fR"
-Where the worker accepts messages. Required for network mode.
+Where the worker accepts messages. Required for network mode. An IPv6
+address takes IPv6 connections only, on every system: [::] is every IPv6
+address, and no IPv4 one.
 
 .IP "\fB--locator\fR=\fIIP:PORT\fR"
 Where xymond_locator listens, written as for its \fB--listen\fR: IPv4, IPv6
