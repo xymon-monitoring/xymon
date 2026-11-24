@@ -1319,6 +1319,13 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
         the hostname, so if you need to combine this with e.g. an explicit port
         number, it should be done as</p>
     <p class="Pp">	http://www.sample.com:3128=1.2.3.4/index.html</p>
+    <p class="Pp">When one site is tested at several addresses this way -- an
+        IPv4 and an IPv6 address of a dual-stack host, say -- the forced address
+        is shown in the test's status label, after the hostname
+        (&quot;www.sample.com=1.2.3.4&quot;), so tests that share a URL but
+        force different addresses keep their own status, history and graph. A
+        test that forces no address is shown as before, and a URL's login
+        credentials are never shown.</p>
     <p class="Pp"></p>
   </dd>
   <dt id="HTTP"><a class="permalink" href="#HTTP">HTTP Testing via

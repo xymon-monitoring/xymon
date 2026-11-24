@@ -34,6 +34,7 @@ typedef struct urlelem_t {
 	char *schemeopts;
 	char *host;
 	char *ip;
+	int  ipforced;	/* ip came from a "=forcedIP" in the spec, not from DNS */
 	int  port;
 	char *auth;
 	char *relurl;
@@ -63,6 +64,7 @@ extern int urlvalidate(char *query, char *validchars);
 extern char *cleanurl(char *url);
 extern void parse_url(char *inputurl, urlelem_t *url);
 extern char *decode_url(char *testspec, weburl_t *weburl);
+extern char *urlwithforcedip(char *url, urlelem_t *desturl);
 extern void free_weburl(weburl_t *weburl);
 
 #endif

@@ -373,6 +373,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 	p = strchr(netloc, '=');
 	if (p) {
 		url->ip = strdup(p+1);
+		url->ipforced = 1;	/* a "=forcedIP", not a DNS answer */
 		*p = '\0';
 	}
 	p = strchr(netloc, ':');
@@ -670,6 +671,49 @@ char *decode_url(char *testspec, weburl_t *weburl)
 	xfree(inp);
 
 	return weburl->desturl->origform;
+}
+
+/*
+ * The canonical URL with the forced target address put back after the host:
+ * "https://host/path" becomes "https://host=1.2.3.4/path". Several tests that
+ * share one URL but force different addresses (the dual-stack case in
+ * issue #958) then get distinct status labels, and distinct RRD files --
+ * xymond/rrd/do_net.c keys the http RRD on this one token, up to the first
+ * space. The forced address is already parsed into desturl->ip; an address that
+ * came from DNS has ipforced == 0 and is left off, so a plain test's label and
+ * RRD key are byte-for-byte unchanged. No credentials reach the result: the
+ * canonical url carries none, decode_url() keeps them in desturl->auth. The
+ * caller owns the returned string and frees it with xfree(); it is always a
+ * fresh allocation, a copy of url when there is nothing to insert.
+ */
+char *urlwithforcedip(char *url, urlelem_t *desturl)
+{
+	char *hostpos, *afterhost, *schemesep, *result;
+	size_t prefixlen;
+
+	if (!desturl || !desturl->ipforced || !desturl->ip || !desturl->host) return strdup(url);
+
+	schemesep = strstr(url, "://");
+	hostpos = strstr(schemesep ? schemesep + 3 : url, desturl->host);
+	if (!hostpos) return strdup(url);	/* host not literally in the URL; leave it */
+	afterhost = hostpos + strlen(desturl->host);
+	/* Put the forced address after a ":port", not between the host and its
+	 * port: an IPv6 address inserted before the port would run into it and
+	 * read as a different, valid address (issue #958). */
+	if (*afterhost == ':') {
+		char *p = afterhost + 1;
+		while ((*p >= '0') && (*p <= '9')) p++;
+		if (p > afterhost + 1) afterhost = p;
+	}
+
+	prefixlen = afterhost - url;
+	result = (char *)malloc(strlen(url) + 1 + strlen(desturl->ip) + 1);
+	memcpy(result, url, prefixlen);
+	result[prefixlen] = '\0';
+	strcat(result, "=");
+	strcat(result, desturl->ip);
+	strcat(result, afterhost);
+	return result;
 }
 
 /*
