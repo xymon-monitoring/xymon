@@ -92,8 +92,9 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
       Defaults to <b>zfs virtiofs tmpfs</b> &#x2014; real local filesystems that
       merely happen to be flagged nodev. Set to &quot;&quot; to restore the
       historical behaviour of dropping every nodev type. The noisy tmpfs mounts
-      (/run, /run/lock, /run/user/N) are filtered server-side by the CLASS=linux
-      block in analysis.cfg, not here.
+      under /run (all but /run/shm and /run/media) and the WSL2 kernel-header
+      mount are filtered server-side by the CLASS=linux block in analysis.cfg,
+      not here.
     <br/>
     On FreeBSD: names types from the default df exclude set (<b>nullfs</b>
       <b>cd9660 procfs devfs linprocfs fdescfs autofs</b>, passed to df as one

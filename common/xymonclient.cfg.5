@@ -62,8 +62,9 @@ On Linux: types normally excluded as pseudo (\fBnodev\fR) filesystems.
 Defaults to \fBzfs virtiofs tmpfs\fR \(em real local filesystems
 that merely happen to be flagged nodev. Set to "" to restore the
 historical behaviour of dropping every nodev type. The noisy tmpfs
-mounts (/run, /run/lock, /run/user/N) are filtered server-side by the
-CLASS=linux block in analysis.cfg, not here.
+mounts under /run (all but /run/shm and /run/media) and the WSL2 kernel-header mount
+are filtered server-side by the CLASS=linux block in analysis.cfg, not
+here.
 .br
 On FreeBSD: names types from the default df exclude set (\fBnullfs
 cd9660 procfs devfs linprocfs fdescfs autofs\fR, passed to df as

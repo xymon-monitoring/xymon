@@ -352,22 +352,27 @@
 
 
 CLASS=linux
-	# Ignore some usually uninteresting tmpfs mounts. The Linux client reports
-	# tmpfs by default; /run and friends are RAM-backed scratch space sized at
-	# total RAM, so suppress them here rather than have them clutter the report.
-	# /dev/shm is intentionally left monitored (a full one is a real incident).
+	# Ignore some usually uninteresting mounts. The Linux client reports
+	# tmpfs by default; /run and everything under it is RAM-backed scratch
+	# space sized at total RAM, and distributions keep adding mounts there
+	# (/run/user, /run/qemu, ...), so the whole tree is suppressed rather
+	# than listed name by name. /run/shm and /run/media are the exceptions,
+	# left monitored: /run/shm is the same space as /dev/shm on Debian and
+	# WSL, and /run/media holds removable disks (udisks2 mounts them there on
+	# Fedora, RHEL, openSUSE and Arch). A full one of either is a real incident.
+	# WSL2 mounts its kernel headers read-only, from an image that is full
+	# by construction, at /usr/src/linux-headers-<version>-microsoft-...;
+	# it can neither fill nor be freed, so it is suppressed as well.
 	DISK	/dev IGNORE
 	DISK	/lib/init/rw IGNORE
 	DISK	/sys/fs/cgroup IGNORE
-	DISK	/run IGNORE
-	DISK	/run/lock IGNORE
-	DISK	%^/run/user/\d+$ IGNORE
+	DISK	%^/run(/(?!(shm|media)(/|$)).*)?$ IGNORE
+	DISK	%^/usr/src/linux-headers-[^/]*-microsoft-[^/]*$ IGNORE
 	INODE	/dev IGNORE
 	INODE	/lib/init/rw IGNORE
 	INODE	/sys/fs/cgroup IGNORE
-	INODE	/run IGNORE
-	INODE	/run/lock IGNORE
-	INODE	%^/run/user/\d+$ IGNORE
+	INODE	%^/run(/(?!(shm|media)(/|$)).*)?$ IGNORE
+	INODE	%^/usr/src/linux-headers-[^/]*-microsoft-[^/]*$ IGNORE
 
 
 # Local additions: any file dropped into the directory below is included
