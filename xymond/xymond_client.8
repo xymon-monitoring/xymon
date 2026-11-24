@@ -32,6 +32,11 @@ The same color is used for the "disk" status of a client that reports
 every filesystem excluded by its XYMONCLIENT_FS_* settings: there is
 nothing to check, and no option hides that column. A DISK rule that
 requires a filesystem to be present still alerts.
+.sp
+It is also used for the "inode" status of a client whose inode report
+is empty: none of its filesystems counts inodes, as on a host with only
+ZFS or only APFS, or every one is excluded by those settings. An INODE
+rule that requires a filesystem to be present still alerts.
 
 .IP "\fB\-\-no\-clear\-msgs\fR"
 If there are no logfile checks, the "msgs" column will show a "clear"

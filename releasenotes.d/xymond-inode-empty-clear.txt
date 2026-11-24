@@ -1,0 +1,11 @@
+xymond -- an inode status with no filesystem to check is clear
+--------------------------------------------------------------
+A client none of whose filesystems counts inodes, as on a host with only
+ZFS or only APFS, sends an empty inode report; so does one whose
+XYMONCLIENT_FS_* settings exclude every filesystem. Its "inode" status was
+green, "No filesystems reporting inode data"; it is now clear, with the
+same text. Every such host changes colour once at the upgrade.
+
+An INODE rule that requires a filesystem to exist still alerts. To keep
+green where there is nothing to check, xymond_client takes
+--clear-color=green.

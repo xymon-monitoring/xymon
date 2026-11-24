@@ -12,10 +12,10 @@ emit_df() {
 		# nothing to count does. With DF_LOCAL_ONLY=yes the hard-blocking remote
 		# types count as left out too: df -l does not report them.
 		# Otherwise a non-zero exit is a collection failure - surface a one-line
-		# marker (no df header) so the server goes yellow, not green.
+		# marker (no df header) so the server goes yellow.
 		# Otherwise nothing matched this report (e.g. an inode report whose
 		# filesystems are all zfs, which are excluded): emit nothing, so the
-		# server's empty-report path stays green rather than rejecting a stray
+		# server reads "nothing to check" rather than rejecting a stray
 		# header-only row as "columns not found".
 		_fex=`fs_excl_opt | sed -e 's/^-tno//' -e 's/,/ /g'`
 		[ "$DFLOCALONLY" = yes ] && _fex="$_fex $XYMONCLIENT_FS_REMOTE_HARDBLOCK_TYPES"

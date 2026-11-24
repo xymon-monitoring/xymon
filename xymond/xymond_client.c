@@ -935,9 +935,15 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if ((capacol == -1) && (mntcol == -1)) {
 		if (strlen(dfstr) == 0) {
-			/* Empty inode report, happens on Solaris when all filesystems are ZFS */
-			inodecolor = COL_GREEN;
-			sprintf(msgline, "&green No filesystems reporting inode data\n");
+			/*
+			 * Empty inode report: no filesystem of the host counts inodes
+			 * (all ZFS, all APFS), or the client's XYMONCLIENT_FS_* settings
+			 * leave every one out. That is nothing to check, as for the disk
+			 * report above, not a check that passed. An INODE rule that
+			 * requires a filesystem to exist is still checked below.
+			 */
+			inodecolor = noreportcolor;
+			sprintf(msgline, "&%s No filesystems reporting inode data\n", colorname(noreportcolor));
 			addtobuffer(monmsg, msgline);
 		}
 		else {

@@ -373,12 +373,12 @@ fsf_selfcheck() {
 	esac
 }
 
-# fsf_assert_loud REPORT MSG -- the section must not read as green. Two
+# fsf_assert_loud REPORT MSG -- the section must not read as nothing wrong. Two
 # spellings are equally loud and a client may use either: the "collection
 # failed" marker (the column goes yellow) or one 100%-full unmeasured row
 # per mount (the column goes red). What is forbidden is the third case -- an
 # empty section. The server does not read that the same way in both reports:
-# for [inode] it is green outright ("No filesystems reporting inode data",
+# for [inode] it is clear outright ("No filesystems reporting inode data",
 # unix_inode_report()'s exemption for the all-ZFS Solaris host), and for [df] it
 # is yellow, but only because no column header was found -- so the operator is
 # told the report was incomprehensible rather than what actually happened.
