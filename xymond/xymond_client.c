@@ -509,7 +509,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	init_status(cpucolor);
-	sprintf(msgline, "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
+	snprintf(msgline, sizeof(msgline), "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
 		commafy(hostname), colorname(cpucolor), 
 		(timestr ? timestr : "<no timestamp data>"), 
 		myupstr, 
@@ -531,7 +531,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (separate_uptime_status) {
 		init_status(upstatuscolor);
-		sprintf(msgline, "status %s.uptime %s %s Uptime %s\n",
+		snprintf(msgline, sizeof(msgline), "status %s.uptime %s %s Uptime %s\n",
 			commafy(hostname), colorname(upstatuscolor), 
 			(timestr ? timestr : "<no timestamp data>"),
 			((upstatuscolor == COL_GREEN) ? "OK" : "Not OK"));
@@ -761,7 +761,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.disk %s %s - Filesystems %s\n",
+	snprintf(msgline, sizeof(msgline), "%s.disk %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(diskcolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		(((diskcolor == COL_RED) || (diskcolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -992,7 +992,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.inode %s %s - Filesystems %s\n",
+	snprintf(msgline, sizeof(msgline), "%s.inode %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(inodecolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		(((inodecolor == COL_RED) || (inodecolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1072,7 +1072,7 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	init_status(memorycolor);
-	sprintf(msgline, "status %s.memory %s %s - Memory %s\n",
+	snprintf(msgline, sizeof(msgline), "status %s.memory %s %s - Memory %s\n",
 		commafy(hostname), colorname(memorycolor), 
 		(timestr ? timestr : "<No timestamp data>"),
 		memorysummary);
@@ -1246,7 +1246,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.procs %s %s - Processes %s\n",
+	snprintf(msgline, sizeof(msgline), "%s.procs %s %s - Processes %s\n",
 		commafy(hostname), colorname(pscolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		(((pscolor == COL_RED) || (pscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1288,7 +1288,7 @@ static void old_msgs_report(char *hostname, void *hinfo, char *fromline, char *t
 		return;
 
 	init_status(msgscolor);
-	sprintf(msgline, "status %s.msgs %s System logs at %s : %s\n",
+	snprintf(msgline, sizeof(msgline), "status %s.msgs %s System logs at %s : %s\n",
 		commafy(hostname), colorname(msgscolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		summary);
@@ -1390,7 +1390,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.msgs %s %s - System logs %s\n",
+	snprintf(msgline, sizeof(msgline), "%s.msgs %s %s - System logs %s\n",
 		commafy(hostname), colorname(msgscolor), 
 		(timestr ? timestr : "<No timestamp data>"),
 		(((msgscolor == COL_RED) || (msgscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1583,7 +1583,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 		addtostatus(msgline);
 
-		sprintf(msgline, "%s.files %s %s - Files %s\n",
+		snprintf(msgline, sizeof(msgline), "%s.files %s %s - Files %s\n",
 			commafy(hostname), colorname(filecolor), 
 			(timestr ? timestr : "<No timestamp data>"),
 			(((filecolor == COL_RED) || (filecolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1869,7 +1869,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
 		addtostatus(msgline);
 
-		sprintf(msgline, "%s.ports %s %s - Ports %s\n",
+		snprintf(msgline, sizeof(msgline), "%s.ports %s %s - Ports %s\n",
 			commafy(hostname), colorname(portcolor), 
 			(timestr ? timestr : "<No timestamp data>"), 
 			(((portcolor == COL_RED) || (portcolor == COL_YELLOW)) ? "NOT ok" : "ok"));
