@@ -1053,8 +1053,36 @@ int main(int argc, char *argv[])
 				  case P_RESP_READING:
 				  case P_RESP_SENDING:
 					if (overdue(&tmo, &cwalk->timelimit)) {
-						cwalk->state = P_CLEANUP;
+						/* Counted under the state it timed out in, so before that changes */
 						msgs_timeout_from[cwalk->state]++;
+
+						if (cwalk->state == P_REQ_SENDING) {
+							/*
+							 * This server did not take the connection, or
+							 * the message, in time: one that drops packets
+							 * instead of refusing them ends here. Given up
+							 * for this server only, as a refused connection
+							 * is in P_REQ_CONNECTING: on to the next one, if
+							 * there is one, with the whole message again.
+							 */
+							dbgprintf("Timeout sending to server %s\n", inet_ntoa(*cwalk->serverip));
+							close(cwalk->ssocket); sockcount--;
+							cwalk->ssocket = -1;
+							cwalk->connectpending = 0;
+							cwalk->snum--;
+							if (cwalk->snum) {
+								cwalk->conntries = CONNECT_TRIES;
+								cwalk->sendtries = SEND_TRIES;
+								cwalk->conntime = 0;
+								cwalk->state = P_REQ_CONNECTING;
+							}
+							else {
+								cwalk->state = P_CLEANUP;
+							}
+						}
+						else {
+							cwalk->state = P_CLEANUP;
+						}
 					}
 					break;
 
