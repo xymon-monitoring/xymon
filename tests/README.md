@@ -19,10 +19,26 @@ pass/skip/fail summary (exit `0` = pass, `77` = skip, anything else = fail).
 Output adapts on its own: plain text on a terminal, GitHub Actions annotations
 under CI — the workflow and a developer run the exact same runner.
 
-Once the tree is configured, `make test` runs the same thing. A single
-test also runs standalone — what reviewers do:
+Once the tree is configured, `make test` runs the same thing. To run a subset,
+give the runner a selector — a glob matched against each discovered test's
+path, that path without the `tests/` prefix, its basename, or its stem:
+
+    ./tests/testsuite xymonnet/*          # one area
+    ./tests/testsuite '*cpu*'             # by substring
+    ./tests/testsuite tls-handshake-cpu   # one test, by stem
+
+A selected test runs under the same per-test watchdog as a full run, so it
+cannot outlive `XYMON_TESTS_TIMEOUT` and leak a backgrounded child. A selector
+that matches nothing is an error, and a selector cannot be combined with
+`XYMON_TESTS_STRICT` (the coverage floor is a property of the whole suite).
+
+A single test also runs standalone — the quickest edit loop:
 
     ./tests/client/fs-filter-linux.sh
+
+but a standalone run has no runner and so no watchdog: a test that hangs there
+leaves whatever it backgrounded running. Prefer the selector when a test (or
+the probe it drives) might not return.
 
 `bash` is a hard prerequisite of the suite (every test uses it; see
 Conventions). The runner itself is POSIX sh, and on a host without bash it
