@@ -539,9 +539,28 @@ char *init_tcp_services(void)
 				l = skipwhitespace(l+7);
 				opt = strtok(l, ",");
 				while (opt) {
-					if      (strcmp(opt, "ssl") == 0)    first->rec->flags |= TCP_SSL;
-					else if (strcmp(opt, "banner") == 0) first->rec->flags |= TCP_GET_BANNER;
-					else if (strcmp(opt, "telnet") == 0) first->rec->flags |= TCP_TELNET;
+					/*
+					 * ssl, telnet and banner still work, but a step says the
+					 * same thing and says where it happens, so the shipped
+					 * entries use the step and a file that still carries the
+					 * option gets a hint naming it. Advisory, not a refusal:
+					 * the entry still runs.
+					 */
+					if      (strcmp(opt, "ssl") == 0) {
+						first->rec->flags |= TCP_SSL;
+						errprintf("Service %s: 'options ssl' is the older spelling; prefer 'start tls' as the first step (TLS from the first byte). Both work.\n",
+							  first->rec->svcname);
+					}
+					else if (strcmp(opt, "banner") == 0) {
+						first->rec->flags |= TCP_GET_BANNER;
+						errprintf("Service %s: 'options banner' is the older spelling; prefer an 'expect' step, which reads the greeting and checks it too. Both work.\n",
+							  first->rec->svcname);
+					}
+					else if (strcmp(opt, "telnet") == 0) {
+						first->rec->flags |= TCP_TELNET;
+						errprintf("Service %s: 'options telnet' is the older spelling; prefer 'start iac' as the first step. Both work.\n",
+							  first->rec->svcname);
+					}
 					else if (strncmp(opt, "alpn=", 5) == 0) {
 						first->rec->alpns = strdup(opt+5);
 					}
