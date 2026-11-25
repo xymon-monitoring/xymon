@@ -117,7 +117,21 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
     <p class="Pp"></p>
   </dd>
   <dt id="SIGTERM"><a class="permalink" href="#SIGTERM"><b>SIGTERM</b></a></dt>
-  <dd>Stops the tasks, removes their PIDFILEs, and exits.
+  <dd>Stops xymonlaunch. Every running task is sent a SIGTERM and its PIDFILE is
+      removed, and xymonlaunch exits without waiting for the tasks.
+    <p class="Pp">A task with an INTERVAL or a CRONDATE is started in a process
+        group of its own, and the signal goes to that group: the task ends with
+        whatever it started. What such a task left running after it exited is
+        ended too. The client leaves a vmstat running for the five minutes its
+        sample takes, and this is what ends it when the client is stopped. A
+        command that such a task starts and that must outlive xymonlaunch has to
+        leave the task's process group, for instance with <b>setsid</b>.</p>
+    <p class="Pp">A task that stays up is signalled alone, and ends its own
+        children when it has written what it holds.</p>
+  </dd>
+  <dt id="SIGINT"><a class="permalink" href="#SIGINT"><b>SIGINT</b></a></dt>
+  <dd>As SIGTERM. Run in the foreground with <b>--no-daemon</b>, an interrupt
+      from the keyboard stops xymonlaunch and its tasks in the same way.
     <p class="Pp"></p>
   </dd>
 </dl>

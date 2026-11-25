@@ -74,6 +74,7 @@ typedef struct tasklist_t {
 	int onhold;	/* held back by FAILDELAY, and said so */
 	int cfload;	/* Used while reloading a configuration */
 	int beingkilled;
+	int owngroup;	/* started as the leader of a process group of its own */
 	char *cronstr; /* pointer to cron string */
 	void *crondate; /* pointer to cron date-time structure */
 	int cronmin;	/* minute value of the last successful cron execution attempt */
@@ -84,6 +85,64 @@ typedef struct tasklist_t {
 tasklist_t *taskhead = NULL;
 tasklist_t *tasktail = NULL;
 grouplist_t *grouphead = NULL;
+
+/*
+ * What a periodic task left running after it exited. Such a task is started
+ * as the leader of its own process group, so anything it detached -- the
+ * client's five-minute vmstat -- is still in that group, and can be ended
+ * when the launcher stops. Without this nothing would: it is no child of
+ * ours, and no task either.
+ *
+ * Only periodic tasks, because a group is signalled as a whole. A task that
+ * stays up -- xymond, a channel -- is signalled alone, as it always was, and
+ * ends its own children once they have written what they hold.
+ *
+ * A group id is the pid its leader had, and the system does not hand that
+ * number out again while the group has a member. Once it is empty the number
+ * is free, so an entry is dropped as soon as its group is seen empty.
+ */
+typedef struct leftover_t {
+	pid_t pgid;
+	struct leftover_t *next;
+} leftover_t;
+static leftover_t *leftovers = NULL;
+
+/* A task that runs and exits, on an interval or a cron line: not one the
+   launcher keeps up. */
+static int periodic(tasklist_t *t)
+{
+	return ((t->interval > 0) || (t->crondate != NULL));
+}
+
+/* ESRCH is the only answer that says the group is empty. */
+static int group_has_members(pid_t pgid)
+{
+	return ((kill(-pgid, 0) == 0) || (errno != ESRCH));
+}
+
+static void leftover_add(pid_t pgid)
+{
+	leftover_t *l = (leftover_t *)calloc(1, sizeof(leftover_t));
+
+	if (!l) return;
+	l->pgid = pgid;
+	l->next = leftovers;
+	leftovers = l;
+}
+
+static void leftovers_drop_empty(void)
+{
+	leftover_t **lp = &leftovers;
+
+	while (*lp) {
+		if (!group_has_members((*lp)->pgid)) {
+			leftover_t *gone = *lp;
+			*lp = gone->next;
+			xfree(gone);
+		}
+		else lp = &(*lp)->next;
+	}
+}
 
 volatile time_t nextcfgload = 0;
 volatile int running = 1;
@@ -681,6 +740,7 @@ void sig_handler(int signum)
 		dologswitch = 1;
 		break;
 
+	  case SIGINT:
 	  case SIGTERM:
 		running = 0;
 		break;
@@ -836,6 +896,10 @@ int main(int argc, char *argv[])
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
+	/* An interrupt from the terminal reaches the foreground process group
+	   only, which no longer holds the periodic tasks: stop as for SIGTERM,
+	   so that they are ended too. */
+	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 
 	errprintf("xymonlaunch starting\n");
@@ -865,10 +929,17 @@ int main(int argc, char *argv[])
 			reopen_file(logfn, "a", stderr);
 		}
 
+		leftovers_drop_empty();
+
 		/* Pick up children that have terminated */
 		while ((cpid = wait3(&status, WNOHANG, NULL)) > 0) {
 			for (twalk = taskhead; (twalk && (twalk->pid != cpid)); twalk = twalk->next);
 			if (twalk) {
+				if (twalk->owngroup && group_has_members(cpid)) {
+					dbgprintf("Task %s left processes running in group %d\n", twalk->key, (int)cpid);
+					leftover_add(cpid);
+				}
+				twalk->owngroup = 0;
 				twalk->pid = 0;
 				twalk->beingkilled = 0;
 				/* The pid in there is gone, and the system may hand that
@@ -960,12 +1031,17 @@ int main(int argc, char *argv[])
 
 				twalk->laststart = now;
 				if (twalk->crondate) twalk->cronmin = thisminute;
+				twalk->owngroup = periodic(twalk);
 				twalk->pid = fork();
 				if (twalk->pid == 0) {
 					/* Exec the task */
 					char *cmd;
 					char **cmdargs = NULL;
 					static char tasksleepenv[20],bbsleepenv[20];
+
+					/* Here and in the parent: whichever runs first, the
+					   group exists before either of them relies on it. */
+					if (twalk->owngroup) setpgid(0, 0);
 
 					/* Setup environment */
 					if (twalk->envfile) {
@@ -1026,8 +1102,10 @@ int main(int argc, char *argv[])
 					/* Fork failed */
 					errprintf("Fork failed!\n");
 					twalk->pid = 0;
+					twalk->owngroup = 0;
 				}
 				else {
+					if (twalk->owngroup) setpgid(twalk->pid, twalk->pid);
 					if (twalk->group) twalk->group->currentuse++;
 					if (verbose) errprintf("Task %s started with PID %d\n", twalk->key, (int)twalk->pid);
 				}
@@ -1054,12 +1132,24 @@ int main(int argc, char *argv[])
 		sleep(5);
 	}
 
-	/* Shutdown running tasks */
+	/* Shutdown running tasks. A periodic one with everything it started; one
+	   that stays up alone, so that its children end when it tells them to. */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
-		if (twalk->pid) kill(twalk->pid, SIGTERM);
+		if (twalk->pid) kill((twalk->owngroup ? -twalk->pid : twalk->pid), SIGTERM);
 		/* Nothing reaps them from here, so the unlink done at reap time
 		   never runs: their pidfiles would outlive the whole launcher. */
 		if (twalk->pidfile) unlink(expand_env(twalk->pidfile));
+	}
+
+	/* And what periodic tasks that have exited left running */
+	leftovers_drop_empty();
+	while (leftovers) {
+		leftover_t *l = leftovers;
+
+		dbgprintf("Ending what a task left running in group %d\n", (int)l->pgid);
+		kill(-l->pgid, SIGTERM);
+		leftovers = l->next;
+		xfree(l);
 	}
 
 	if (pidfn) unlink(pidfn);
