@@ -443,6 +443,10 @@ The review names that head and says, as prose or a table:
   or running it where the author could not — and which it only read;
 - what it found, or that it found nothing, and what it could not check.
 
+Each finding says what is wrong, with its `file:line`, why it breaks, and how to fix it,
+with the corrected code where the reviewer can write it. A finding without a fix tells the
+author where to look, and a finding with one lets them apply it, or say why it does not hold.
+
 Proposed, not required: start beyond the pre-review's claims with what it says most
 needs the approver, where it names something, then what it says was only read or not
 checked; and record checks in the terms of a [pre-review](#pre-review) — what was
