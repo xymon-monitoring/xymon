@@ -20,8 +20,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <time.h>
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+#include "pcre2_api_compat.h"
 
 #include "libxymon.h"
 
@@ -39,9 +38,9 @@ pcre2_code *compileregex_ext(const char *pattern, uint32_t flags, int *errcode, 
 	PCRE2_SIZE errofs;
 
 	dbgprintf("Compiling regex %s\n", pattern);
-	result = pcre2_compile(pattern, strlen(pattern), flags, &err, &errofs, NULL);
+	result = pcre2_compile(PCRE2STR(pattern), strlen(pattern), flags, &err, &errofs, NULL);
 	if (result == NULL) {
-		pcre2_get_error_message(err, errmsg, sizeof(errmsg));
+		pcre2_get_error_message(err, PCRE2BUF(errmsg), sizeof(errmsg));
 		errprintf("pcre compile '%s' failed (offset %zu): %s\n", pattern, errofs, errmsg);
 		if (errcode) *errcode = err;
 		if (erroffset) *erroffset = errofs;
@@ -145,8 +144,9 @@ static int matchregex_named(const char *needle, pcre2_code *pcrecode, const char
 
 	if (!needle || !pcrecode) return 0;
 
-	ovector = pcre2_match_data_create(30, NULL);
-	result = pcre2_match(pcrecode, needle, strlen(needle), 0, 0, ovector, NULL);
+	ovector = pcre2_match_data_create_from_pattern(pcrecode, NULL);
+	if (!ovector) return 0;
+	result = pcre2_match(pcrecode, PCRE2STR(needle), strlen(needle), 0, 0, ovector, NULL);
 	pcre2_match_data_free(ovector);
 	if ((result < 0) && (result != PCRE2_ERROR_NOMATCH)) matcherror(pcrecode, result, name);
 	return (result >= 0);
@@ -317,7 +317,7 @@ int pickdata(char *buf, pcre2_code *expr, int dupok, int nargs, ...)
 	ovector = pcre2_match_data_create_from_pattern(expr, NULL);
 	if (!ovector) return 0;
 
-	res = pcre2_match(expr, buf, strlen(buf), 0, 0, ovector, NULL);
+	res = pcre2_match(expr, PCRE2STR(buf), strlen(buf), 0, 0, ovector, NULL);
 	if (res <= 0) {
 		pcre2_match_data_free(ovector);
 		return 0;
@@ -329,7 +329,7 @@ int pickdata(char *buf, pcre2_code *expr, int dupok, int nargs, ...)
 	for (i=1; (i < res); i++) {
 		*w = '\0';
 		l = sizeof(w);
-		pcre2_substring_copy_bynumber(ovector, i, w, &l);
+		pcre2_substring_copy_bynumber(ovector, i, PCRE2BUF(w), &l);
 		ptr = va_arg(ap, char **);
 		if (dupok) {
 			if (*ptr) xfree(*ptr);
@@ -360,4 +360,3 @@ int timematch(char *holidaykey, char *tspec)
 
 	return result;
 }
-

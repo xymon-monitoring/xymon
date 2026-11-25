@@ -13,8 +13,7 @@
 
 /* The clients probably don't have the pcre headers */
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
-#define PCRE2_CODE_UNIT_WIDTH 8
-#include <pcre2.h>
+#include "pcre2_api_compat.h"
 #include <stdarg.h>
 
 extern pcre2_code *compileregex(const char *pattern);
