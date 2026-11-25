@@ -44,7 +44,21 @@ determine which pages and hosts the user is allowed access to.
 Only information about those hosts will be made available by the CGI
 tool.
 
+A group named for a page also covers the pages below it: a member of
+\fBservers\fR reaches the hosts on \fBservers\fR and on \fBservers/web\fR.
+
+The top\-level page is named \fB/\fR, so a group named \fB/\fR covers the
+hosts on the Xymon frontpage. It covers those hosts only. A \fBsubpage\fR
+declared before any \fBpage\fR line is built below the frontpage and is named
+\fB/\fIsubpagename\fR: a group of that name covers it and the pages below it,
+in the same way as any other page, and a group named \fB/\fR does not.
+
 Members of the group \fBroot\fR has access to all hosts.
+
+The group file grants access, it does not distinguish between kinds of access:
+a user who can view a host through \fIsvcstatus.cgi(1)\fR can also acknowledge
+it through \fIacknowledge.cgi(1)\fR, and enable or disable it through the
+enadis CGI.
 
 Access will also be granted, if the user is a member of a group
 with the same name as the \fBhost\fR being requested, or as the

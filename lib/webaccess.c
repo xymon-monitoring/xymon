@@ -77,7 +77,26 @@ int web_access_allowed(char *username, char *hostname, char *testname, web_acces
 	while (onepg) {
 		char *p;
 
-		p = strchr(onepg, '/'); if (p) *p = '\0'; /* Will only look at the top-level path element */
+		/*
+		 * A group named for a page covers the pages below it, so only the
+		 * top-level element of a pagepath is looked up: "sub/deep" is granted
+		 * by "sub".
+		 *
+		 * The top-level page is named "/", because its own name is empty and
+		 * the separator is all that is left. The pages below it are named
+		 * "/name", and their children "/name/...". Truncating any of those at
+		 * the leading slash leaves the empty string, which no line of the
+		 * access config can name, so none of those hosts could be granted to
+		 * anyone: "root:" was the only way in.
+		 *
+		 * So for a pagepath that begins with the separator, the top-level
+		 * element ends at the *next* one: "/" stays "/", and "/name/deep"
+		 * becomes "/name". Reducing "/name" to "/" instead would let a group
+		 * named for the front page reach a page it was never named on, since
+		 * "/name" is also what a page whose name begins with a slash produces.
+		 */
+		p = strchr(onepg + ((*onepg == '/') ? 1 : 0), '/');
+		if (p) *p = '\0';
 
 		SBUF_MALLOC(key, strlen(onepg) + strlen(username) + 2);
 		snprintf(key, key_buflen, "%s %s", onepg, username);
