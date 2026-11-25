@@ -77,6 +77,8 @@ typedef struct conn_t {
 	struct in_addr *clientip, *serverip;
 	int snum;
 	int ssocket;
+	int psocket;			/* Last server reached, kept for its answer: see answer_from_kept() */
+	struct in_addr *pserverip;
 	int conntries, sendtries;
 	int connectpending;
 	time_t conntime;
@@ -186,6 +188,29 @@ static int do_write(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t
 	}
 
 	return 0;
+}
+
+/*
+ * A "client" message goes to every server, and its client waits for an
+ * answer: the host's client-local.cfg section. It is read from the last
+ * server, but the socket of the last server reached before it is kept,
+ * half-closed, while the message goes on. When the last server cannot be
+ * reached, the answer is read from that one instead of the client getting
+ * none, and keeping the logfetch configuration it had. Returns 1 when it
+ * does so: the message goes back to P_REQ_DONE with that socket, as if it
+ * had just been sent there.
+ */
+static int answer_from_kept(conn_t *conn)
+{
+	if ((conn->psocket < 0) || (conn->csocket < 0)) return 0;
+
+	dbgprintf("Taking the answer from %s, the last server reached\n", inet_ntoa(*conn->pserverip));
+	conn->ssocket = conn->psocket;
+	conn->serverip = conn->pserverip;
+	conn->psocket = -1;
+	conn->snum = 1;		/* P_REQ_DONE counts it down to the answer */
+	conn->state = P_REQ_DONE;
+	return 1;
 }
 
 void do_log(conn_t *conn)
@@ -502,6 +527,7 @@ int main(int argc, char *argv[])
 			stentry->timelimit.tv_nsec = stentry->arrival.tv_nsec;
 			stentry->bufsize = BUFSZ_INC;
 			stentry->buf = (char *)malloc(stentry->bufsize);
+			stentry->psocket = -1;	/* not 0: see answer_from_kept() */
 			stentry->next = chead;
 			chead = stentry;
 
@@ -596,7 +622,7 @@ int main(int argc, char *argv[])
 					/*
 					 * "client" data messages go to all Xymon servers, but
 					 * we will only pass back the response from one of them
-					 * (the last one).
+					 * (the last one reached: see answer_from_kept()).
 					 * Match "client " and "client/" exactly: the client-
 					 * prefixed query commands ("clientlog", "clientsubmit",
 					 * "clientconfig") are two-way requests handled below and
@@ -764,7 +790,7 @@ int main(int argc, char *argv[])
 						cwalk->sendtries = SEND_TRIES;
 						cwalk->conntime = 0;
 					}
-					else {
+					else if (!answer_from_kept(cwalk)) {
 						cwalk->state = P_CLEANUP;
 					}
 					break;
@@ -812,7 +838,16 @@ int main(int argc, char *argv[])
 				cwalk->snum--;
 				if (cwalk->snum) {
 					/* More servers to do */
-					close(cwalk->ssocket); cwalk->ssocket = -1; sockcount--;
+					if (cwalk->csocket >= 0) {
+						/* Its client waits for an answer: keep this server for it */
+						if (cwalk->psocket >= 0) { close(cwalk->psocket); sockcount--; }
+						cwalk->psocket = cwalk->ssocket;
+						cwalk->pserverip = cwalk->serverip;
+					}
+					else {
+						close(cwalk->ssocket); sockcount--;
+					}
+					cwalk->ssocket = -1;
 					cwalk->conntries = CONNECT_TRIES;
 					cwalk->sendtries = SEND_TRIES;
 					cwalk->conntime = 0;
@@ -821,6 +856,10 @@ int main(int argc, char *argv[])
 				}
 				else {
 					/* Have sent to all servers, grab the response from the last one. */
+					if (cwalk->psocket >= 0) {
+						close(cwalk->psocket); sockcount--;
+						cwalk->psocket = -1;
+					}
 					cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 					memset(cwalk->buf, 0, cwalk->bufsize);
 				}
@@ -909,6 +948,10 @@ int main(int argc, char *argv[])
 				if (cwalk->ssocket >= 0) {
 					close(cwalk->ssocket); sockcount--;
 					cwalk->ssocket = -1;
+				}
+				if (cwalk->psocket >= 0) {
+					close(cwalk->psocket); sockcount--;
+					cwalk->psocket = -1;
 				}
 				cwalk->arrival.tv_sec = cwalk->arrival.tv_nsec = 0;
 				cwalk->bufp = cwalk->buf; 
@@ -1076,7 +1119,7 @@ int main(int argc, char *argv[])
 								cwalk->conntime = 0;
 								cwalk->state = P_REQ_CONNECTING;
 							}
-							else {
+							else if (!answer_from_kept(cwalk)) {
 								cwalk->state = P_CLEANUP;
 							}
 						}
@@ -1178,6 +1221,8 @@ int main(int argc, char *argv[])
 				newconn->snum = 0;
 				newconn->ssocket = -1;
 				newconn->serverip = NULL;
+				newconn->psocket = -1;
+				newconn->pserverip = NULL;
 				newconn->conntries = 0;
 				newconn->sendtries = 0;
 				newconn->timelimit.tv_sec = newconn->timelimit.tv_nsec = 0;

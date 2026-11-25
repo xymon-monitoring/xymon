@@ -60,7 +60,8 @@ Section: Maintenance Commands (8)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a
       &quot;query&quot; and &quot;download&quot; messages, which go to the LAST
       server only). If you have Xymon clients sending their data via this proxy,
       note that the clients will receive their configuration data from the LAST
-      of the servers listed here. This option is required.
+      of the servers listed here, or, when that one cannot be reached, from the
+      last server before it that was. This option is required.
     <p class="Pp"></p>
   </dd>
   <dt id="listen"><a class="permalink" href="#listen"><b>--listen</b>=<i>LOCALIP</i>[:<i>PORT</i>]</a></dt>
