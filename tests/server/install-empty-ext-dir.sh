@@ -53,6 +53,7 @@ vars=(
 	INSTALLSTATICWWWDIR="$dest/var/www"
 	INSTALLCLIENTETCDIR="$dest/top/client/etc" INSTALLCLIENTBINDIR="$dest/top/client/bin"
 	INSTALLCLIENTTMPDIR="$dest/top/client/tmp" INSTALLCLIENTLOGDIR="$dest/top/client/logs"
+	INSTALLCLIENTEXTDIR="$dest/top/client/ext"
 )
 
 "$XYMON_MAKE" -C "$tree" install "${vars[@]}" PKGBUILD=1 >"$work/install.log" 2>&1 \

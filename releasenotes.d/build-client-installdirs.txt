@@ -1,18 +1,26 @@
 build -- a client-only build installs where it was configured to
 ----------------------------------------------------------------
 
-The client's etc, bin, tmp and logs directories can now be installed
-elsewhere, as the server's can: set INSTALLCLIENTETCDIR, INSTALLCLIENTBINDIR,
-INSTALLCLIENTTMPDIR and INSTALLCLIENTLOGDIR when running configure, or on the
-make command line. A client-only build also installs into the INSTALLETCDIR,
-INSTALLBINDIR and INSTALLTMPDIR it was configured with, which it used to
-ignore; INSTALLEXTDIR is still ignored. Each moved directory is linked back
-under the client's home, XYMONCLIENTHOME. If a real directory from an earlier
-install is already in the old place, the client's install stops with a
-message: move its contents and remove it, then install again. A directory
-that already exists in the new place keeps its owner and mode, so a tmp or
-logs directory there must already be writable by the xymon user. A packaging
-that moved the client's files by hand can drop that step.
+The client's etc, bin, tmp and logs directories, and a standalone
+client's ext, can now be installed elsewhere, as the server's can:
+set INSTALLCLIENTETCDIR, INSTALLCLIENTBINDIR, INSTALLCLIENTTMPDIR,
+INSTALLCLIENTLOGDIR and INSTALLCLIENTEXTDIR when running configure,
+or on the make command line. A client-only build also installs into the
+INSTALLETCDIR, INSTALLBINDIR and INSTALLTMPDIR it was configured with,
+which it used to ignore. It still ignores INSTALLEXTDIR, the server's ext:
+only INSTALLCLIENTEXTDIR moves the client's. A server install no longer
+makes its client an ext directory: a server's extensions are the server's,
+in its own ext and run from tasks.cfg. On a host that also carries a server,
+do not give it the server's directories: install does not stop, the client's
+programs replace the server's programs of the same name (xymon, xymoncmd,
+xymonlaunch and others) in its bin, its configuration files go into the
+server's etc, and the two share its tmp. Each moved directory is linked
+back under the client's home, XYMONCLIENTHOME. If a real directory from an
+earlier install is already in the old place, the client's install stops
+with a message: move its contents and remove it, then install again. A
+directory that already exists in the new place keeps its owner and mode,
+so a tmp or logs directory there must already be writable by the xymon
+user. A packaging that moved the client's files by hand can drop that step.
 
 clientupdate refuses to update a client whose bin, etc, tmp or logs is a
 symbolic link, whether made by these settings or by a packaging such as

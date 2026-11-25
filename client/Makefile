@@ -87,6 +87,9 @@ endif
 ifndef INSTALLCLIENTLOGDIR
 INSTALLCLIENTLOGDIR = $(XYMONHOME)/logs
 endif
+ifndef INSTALLCLIENTEXTDIR
+INSTALLCLIENTEXTDIR = $(XYMONHOME)/ext
+endif
 
 # install-safe places every file and directory without following a symlink at
 # the destination name, owning and moding each as it goes (-o/-g below), so the
@@ -103,7 +106,7 @@ install:
 	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLCLIENTETCDIR)
 	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLCLIENTTMPDIR)
 	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)
-	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONHOME)/ext
+	if test -n "$(INSTALLCLIENTEXTDIR)" ; then $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLCLIENTEXTDIR) ; fi
 	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONHOME)/local
 	# The drop-in directories clientlaunch.cfg and xymonclient.cfg include,
 	# made here as xymond/Makefile makes the server's own.

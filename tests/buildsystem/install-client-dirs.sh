@@ -3,12 +3,14 @@
 #
 # tests/buildsystem/install-client-dirs.sh
 #
-# The client's etc, bin, tmp and logs can be installed elsewhere, as the
-# server's can: INSTALLCLIENT{ETC,BIN,TMP,LOG}DIR, which a client-only build
-# also fills from the INSTALLETCDIR/INSTALLBINDIR/INSTALLTMPDIR that
-# configure.client collects. Each relocated directory is linked back from its
-# old place under XYMONCLIENTHOME, so a path written anywhere upstream keeps
-# resolving. Unset, nothing moves and nothing is linked.
+# The client's etc, bin, tmp and logs, and a client-only
+# build's ext, can be installed elsewhere, as the server's can:
+# INSTALLCLIENT{ETC,BIN,TMP,LOG,EXT}DIR, which a client-only build also fills
+# from the INSTALLETCDIR/INSTALLBINDIR/INSTALLTMPDIR that configure.client
+# collects; not from INSTALLEXTDIR, the server's ext. A server build's
+# client has no ext at all. Each relocated directory is linked back from
+# its old place under XYMONCLIENTHOME, so a path written anywhere upstream
+# keeps resolving.  Unset, nothing moves and nothing is linked.
 #
 # A real "make install-client" into a scratch INSTALLROOT, with the build step
 # declared done (-o client) so it installs this tree's built files, PKGBUILD
@@ -35,16 +37,16 @@ run_install() {  # run_install <root> [VAR=value...] -- returns make's status
 work=$(mktempdir)
 
 # ---- unset: the old layout, nothing linked ----------------------------------
-# A client-only tree's Makefile already carries the INSTALLETCDIR, BINDIR
-# and TMPDIR its configure took, and any tree may carry INSTALLCLIENT*DIR:
-# empty them all for the layout nothing asked to move. An empty value means
+# A client-only tree's Makefile already carries the INSTALLETCDIR, BINDIR,
+# TMPDIR and EXTDIR its configure took, and any tree may carry
+# INSTALLCLIENT*DIR: empty them all for the layout nothing asked to move. An empty value means
 # the default, not INSTALLROOT itself. Built under umask 077, as a package
 # may be, the client's home is still 755, or the xymon user cannot enter it.
-unset_dirs="INSTALLETCDIR= INSTALLBINDIR= INSTALLTMPDIR= INSTALLCLIENTETCDIR= INSTALLCLIENTBINDIR= INSTALLCLIENTTMPDIR= INSTALLCLIENTLOGDIR="
+unset_dirs="INSTALLETCDIR= INSTALLBINDIR= INSTALLTMPDIR= INSTALLEXTDIR= INSTALLCLIENTETCDIR= INSTALLCLIENTBINDIR= INSTALLCLIENTTMPDIR= INSTALLCLIENTLOGDIR= INSTALLCLIENTEXTDIR="
 mkdir -p "$work/plain"
 # shellcheck disable=SC2086  # separate assignments by design
-(umask 077; run_install "$work/plain" $unset_dirs) || fail "install-client failed in the default layout: $(cat "$work/plain.log")"
-for d in etc bin tmp logs; do
+(umask 077; run_install "$work/plain" $unset_dirs CLIENTONLY=yes) || fail "install-client failed in the default layout: $(cat "$work/plain.log")"
+for d in etc bin tmp logs ext; do
 	[ -d "$work/plain$home/$d" ] && [ ! -L "$work/plain$home/$d" ] \
 		|| fail "in the default layout, $home/$d is not a real directory"
 done
@@ -54,11 +56,28 @@ mode=$(ls -ld "$work/plain$home" | cut -c1-10)
 [ -f "$work/plain$home/etc/xymonclient.cfg" ] || fail "the default layout put no xymonclient.cfg in $home/etc"
 [ -f "$work/plain$home/bin/xymonclient.sh" ] || fail "the default layout put no xymonclient.sh in $home/bin"
 
+# ---- a server build: its client has no ext of its own -----------------------
+# A server's extensions are the server's, in its own ext and run from
+# tasks.cfg; nothing on a server reads its client's ext. So a server build
+# makes the client's etc, bin, tmp and logs, and no ext, even when
+# INSTALLCLIENTEXTDIR is given.
+mkdir -p "$work/server"
+# shellcheck disable=SC2086  # separate assignments by design
+run_install "$work/server" $unset_dirs CLIENTONLY= INSTALLCLIENTEXTDIR=/usr/libexec/xc-server-ext \
+	|| fail "install-client failed for a server build: $(cat "$work/server.log")"
+for d in etc bin tmp logs; do
+	[ -d "$work/server$home/$d" ] || fail "a server build's client has no $home/$d"
+done
+[ ! -e "$work/server$home/ext" ] && [ ! -e "$work/server/usr/libexec/xc-server-ext" ] \
+	|| fail "a server build made its client an ext, which nothing on a server reads"
+
 # ---- set: files where asked, the old paths linked to them -------------------
 reloc="INSTALLCLIENTETCDIR=/etc/xymon-client INSTALLCLIENTBINDIR=/usr/libexec/xymon-client
-INSTALLCLIENTTMPDIR=/var/tmp/xymon-client INSTALLCLIENTLOGDIR=/var/log/xymon-client"
+INSTALLCLIENTTMPDIR=/var/tmp/xymon-client INSTALLCLIENTLOGDIR=/var/log/xymon-client
+INSTALLCLIENTEXTDIR=/usr/libexec/xymon-client-ext
+CLIENTONLY=yes"
 mkdir -p "$work/moved"
-# shellcheck disable=SC2086  # the four assignments are separate words by design
+# shellcheck disable=SC2086  # the five assignments are separate words by design
 run_install "$work/moved" $reloc || fail "install-client failed with the directories relocated: $(cat "$work/moved.log")"
 [ -f "$work/moved/etc/xymon-client/xymonclient.cfg" ] \
 	|| fail "INSTALLCLIENTETCDIR was not used: no xymonclient.cfg in /etc/xymon-client"
@@ -70,7 +89,8 @@ for dd in clientlaunch.d xymonclient.d; do
 	[ -d "$work/plain$home/etc/$dd" ] || fail "the default layout made no $home/etc/$dd, which the shipped config includes"
 	[ -d "$work/moved/etc/xymon-client/$dd" ] || fail "the relocated install made no /etc/xymon-client/$dd, which the shipped config includes"
 done
-for pair in etc:/etc/xymon-client bin:/usr/libexec/xymon-client tmp:/var/tmp/xymon-client logs:/var/log/xymon-client; do
+for pair in etc:/etc/xymon-client bin:/usr/libexec/xymon-client tmp:/var/tmp/xymon-client logs:/var/log/xymon-client \
+		ext:/usr/libexec/xymon-client-ext; do
 	d=${pair%%:*} to=${pair#*:}
 	[ -d "$work/moved$to" ] || fail "the relocated $d directory $to was not created"
 	[ -L "$work/moved$home/$d" ] || fail "$home/$d was not linked to its new place $to"
@@ -80,15 +100,15 @@ done
 
 # ---- a client-only build: the values configure.client collects --------------
 # Here the INSTALLCLIENT*DIR are worked out inside the Makefile, from
-# INSTALLETCDIR, INSTALLBINDIR and INSTALLTMPDIR, so the client's own Makefile
-# sees them only if install-client passes them down. Set on the command line,
+# INSTALLETCDIR, INSTALLBINDIR and INSTALLTMPDIR, so the
+# client's own Makefile sees them only if install-client passes them down. Set on the command line,
 # make would hand them to it by itself and this would prove nothing. Any
 # INSTALLCLIENT*DIR the tree's Makefile carries would take precedence, so
 # they are emptied.
 mkdir -p "$work/clientonly"
 run_install "$work/clientonly" CLIENTONLY=yes INSTALLETCDIR=/etc/xymon-c \
-	INSTALLBINDIR=/usr/lib/xymon-c/bin INSTALLTMPDIR=/var/tmp/xymon-c \
-	INSTALLCLIENTETCDIR= INSTALLCLIENTBINDIR= INSTALLCLIENTTMPDIR= INSTALLCLIENTLOGDIR= \
+	INSTALLBINDIR=/usr/lib/xymon-c/bin INSTALLTMPDIR=/var/tmp/xymon-c INSTALLEXTDIR=/usr/lib/xymon-c/ext \
+	INSTALLCLIENTETCDIR= INSTALLCLIENTBINDIR= INSTALLCLIENTTMPDIR= INSTALLCLIENTLOGDIR= INSTALLCLIENTEXTDIR= \
 	|| fail "install-client failed for a client-only build with its directories set: $(cat "$work/clientonly.log")"
 [ -f "$work/clientonly/etc/xymon-c/xymonclient.cfg" ] \
 	|| fail "a client-only build ignored INSTALLETCDIR: no xymonclient.cfg in /etc/xymon-c"
@@ -96,6 +116,21 @@ run_install "$work/clientonly" CLIENTONLY=yes INSTALLETCDIR=/etc/xymon-c \
 	|| fail "a client-only build ignored INSTALLBINDIR: no xymonclient.sh in /usr/lib/xymon-c/bin"
 [ -d "$work/clientonly/var/tmp/xymon-c" ] && [ -L "$work/clientonly$home/tmp" ] \
 	|| fail "a client-only build ignored INSTALLTMPDIR"
+# INSTALLEXTDIR is the server's ext: a client-only build given the server's
+# answers, as CI's recipe gives both, must not install into it.
+[ -d "$work/clientonly$home/ext" ] && [ ! -L "$work/clientonly$home/ext" ] \
+	|| fail "a client-only build took INSTALLEXTDIR, the server's ext, for its own: $home/ext is not a real directory"
+[ ! -e "$work/clientonly/usr/lib/xymon-c/ext" ] \
+	|| fail "a client-only build created the server's INSTALLEXTDIR /usr/lib/xymon-c/ext"
+
+# ---- a client-only build: INSTALLCLIENTEXTDIR alone moves ext ----------------
+mkdir -p "$work/clientext"
+run_install "$work/clientext" CLIENTONLY=yes INSTALLEXTDIR=/usr/lib/xymon-c/ext \
+	INSTALLETCDIR= INSTALLBINDIR= INSTALLTMPDIR= \
+	INSTALLCLIENTETCDIR= INSTALLCLIENTBINDIR= INSTALLCLIENTTMPDIR= INSTALLCLIENTLOGDIR= INSTALLCLIENTEXTDIR=/usr/libexec/xc-ext \
+	|| fail "install-client failed for a client-only build with INSTALLCLIENTEXTDIR set: $(cat "$work/clientext.log")"
+[ -d "$work/clientext/usr/libexec/xc-ext" ] && [ "$(readlink "$work/clientext$home/ext")" = /usr/libexec/xc-ext ] \
+	|| fail "a client-only build ignored INSTALLCLIENTEXTDIR: $home/ext is not a link to /usr/libexec/xc-ext"
 
 # ---- and again: the same result, no error -----------------------------------
 # shellcheck disable=SC2086
@@ -178,4 +213,4 @@ run_install "$work/shared" $reloc PKGBUILD= \
 mode=$(ls -ld "$work/shared/etc/xymon-client" | cut -c1-10)
 [ "$mode" = drwx------ ] || fail "install-client changed an existing relocated etc's mode to $mode"
 
-pass "install-client puts the client's etc, bin, tmp and logs where INSTALLCLIENT*DIR say, or a client-only build's INSTALLETCDIR/BINDIR/TMPDIR, links the old paths to them, changes nothing when they are unset, empty or another spelling of the default, keeps the client's home 755, makes the drop-in directories, stops on a real directory in the way, and leaves an existing relocated directory's mode alone"
+pass "install-client puts the client's etc, bin, tmp and logs, and a client-only build's ext, where INSTALLCLIENT*DIR say, or a client-only build's INSTALLETCDIR/BINDIR/TMPDIR but never the server's INSTALLEXTDIR, links the old paths to them, changes nothing when they are unset, empty or another spelling of the default, keeps the client's home 755, makes the drop-in directories, stops on a real directory in the way, and leaves an existing relocated directory's mode alone"

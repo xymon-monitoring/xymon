@@ -50,9 +50,16 @@ export XYMONRUNDIR
 
 # Where the client's own files go. A client-only build honours the
 # INSTALLETCDIR, INSTALLBINDIR and INSTALLTMPDIR configure.client already
-# records and nothing read; a server build keeps its embedded client under
-# XYMONCLIENTHOME. "override", because an empty value on the command line
-# would otherwise win over the default and install into INSTALLROOT itself.
+# records and nothing read; a server build keeps its embedded client
+# under XYMONCLIENTHOME. INSTALLEXTDIR is not taken for the client's
+# ext: it is the server's setting, and a client-only build configured
+# with the server's answers would install into the server's ext. Only
+# INSTALLCLIENTEXTDIR moves it. A server build's client has no ext of
+# its own: a server's extensions are the server's, in its INSTALLEXTDIR
+# and run from tasks.cfg, and nothing on a server reads its client's, so
+# there INSTALLCLIENTEXTDIR is ignored and no ext is made. "override",
+# because an empty value on the command line would otherwise win over
+# the default and install into INSTALLROOT itself.
 #
 # CLIENTHOME is XYMONCLIENTHOME without a trailing slash: the defaults are
 # built from it, and install-clientdirs recognises them by name, so /xc/ and
@@ -80,6 +87,15 @@ override INSTALLCLIENTTMPDIR = $(CLIENTHOME)/tmp
 endif
 ifeq ($(strip $(INSTALLCLIENTLOGDIR)),)
 override INSTALLCLIENTLOGDIR = $(CLIENTHOME)/logs
+endif
+ifeq ($(CLIENTONLY),yes)
+ifeq ($(strip $(INSTALLCLIENTEXTDIR)),)
+override INSTALLCLIENTEXTDIR = $(CLIENTHOME)/ext
+endif
+CLIENTEXTDIRS = ext:$(INSTALLCLIENTEXTDIR)
+else
+override INSTALLCLIENTEXTDIR =
+CLIENTEXTDIRS =
 endif
 
 ifndef INSTALLBINDIR
@@ -554,7 +570,7 @@ client-install: install-client
 # CDPATH set and a relative INSTALLROOT, cd prints the directory it chose,
 # and that line would be compared too. The second loop compares after it
 # creates the directory, so a first install finds the two the same too.
-CLIENTDIRS = etc:$(INSTALLCLIENTETCDIR) bin:$(INSTALLCLIENTBINDIR) tmp:$(INSTALLCLIENTTMPDIR) logs:$(INSTALLCLIENTLOGDIR)
+CLIENTDIRS = etc:$(INSTALLCLIENTETCDIR) bin:$(INSTALLCLIENTBINDIR) tmp:$(INSTALLCLIENTTMPDIR) logs:$(INSTALLCLIENTLOGDIR) $(CLIENTEXTDIRS)
 CLIENTDIR_DEFAULT = { test "$$to" = "$(CLIENTHOME)/$$d" || { test -d $(INSTALLROOT)$$to && test -d $$old && here=`cd $(INSTALLROOT)$$to >/dev/null && pwd -P` && test -n "$$here" && test "$$here" = "`cd $$old >/dev/null && pwd -P`"; }; }
 ifndef PKGBUILD
 # Ownership is set by install-safe mkdir -o above; nothing to add here.
@@ -583,7 +599,7 @@ install-clientdirs:
 	done
 
 install-client: client install-clientdirs
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)"
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)" INSTALLCLIENTEXTDIR="$(INSTALLCLIENTEXTDIR)"
 
 install-clientmsg:
 	@echo ""
@@ -592,4 +608,4 @@ install-clientmsg:
 	@echo "To start the Xymon client, as the $(XYMONUSER) user run '${XYMONHOME}/runclient.sh start'"
 
 install-localclient: install-clientdirs
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)"
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)" INSTALLCLIENTEXTDIR="$(INSTALLCLIENTEXTDIR)"

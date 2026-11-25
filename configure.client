@@ -259,6 +259,9 @@ fi
 if test "$INSTALLCLIENTLOGDIR" != ""; then
 	echo "INSTALLCLIENTLOGDIR = $INSTALLCLIENTLOGDIR"   >>Makefile
 fi
+if test "$INSTALLCLIENTEXTDIR" != ""; then
+	echo "INSTALLCLIENTEXTDIR = $INSTALLCLIENTEXTDIR"   >>Makefile
+fi
 echo "" >>Makefile
 if test "$CONFTYPE" = "client"
 then
