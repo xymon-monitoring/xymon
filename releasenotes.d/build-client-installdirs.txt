@@ -1,0 +1,20 @@
+build -- a client-only build installs where it was configured to
+----------------------------------------------------------------
+
+The client's etc, bin, tmp and logs directories can now be installed
+elsewhere, as the server's can: set INSTALLCLIENTETCDIR, INSTALLCLIENTBINDIR,
+INSTALLCLIENTTMPDIR and INSTALLCLIENTLOGDIR when running configure, or on the
+make command line. A client-only build also installs into the INSTALLETCDIR,
+INSTALLBINDIR and INSTALLTMPDIR it was configured with, which it used to
+ignore; INSTALLEXTDIR is still ignored. Each moved directory is linked back
+under the client's home, XYMONCLIENTHOME. If a real directory from an earlier
+install is already in the old place, the client's install stops with a
+message: move its contents and remove it, then install again. A directory
+that already exists in the new place keeps its owner and mode, so a tmp or
+logs directory there must already be writable by the xymon user. A packaging
+that moved the client's files by hand can drop that step.
+
+clientupdate refuses to update a client whose bin, etc, tmp or logs is a
+symbolic link, whether made by these settings or by a packaging such as
+Debian's, since tar would replace the link with a directory: update such a
+client through its package instead.

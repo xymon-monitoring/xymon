@@ -48,6 +48,40 @@ endif
 # would collide with every other one.
 export XYMONRUNDIR
 
+# Where the client's own files go. A client-only build honours the
+# INSTALLETCDIR, INSTALLBINDIR and INSTALLTMPDIR configure.client already
+# records and nothing read; a server build keeps its embedded client under
+# XYMONCLIENTHOME. "override", because an empty value on the command line
+# would otherwise win over the default and install into INSTALLROOT itself.
+#
+# CLIENTHOME is XYMONCLIENTHOME without a trailing slash: the defaults are
+# built from it, and install-clientdirs recognises them by name, so /xc/ and
+# /xc are the same home.
+CLIENTHOME = $(patsubst %/,%,$(XYMONCLIENTHOME))
+ifeq ($(CLIENTONLY),yes)
+ifeq ($(strip $(INSTALLCLIENTETCDIR)),)
+override INSTALLCLIENTETCDIR = $(INSTALLETCDIR)
+endif
+ifeq ($(strip $(INSTALLCLIENTBINDIR)),)
+override INSTALLCLIENTBINDIR = $(INSTALLBINDIR)
+endif
+ifeq ($(strip $(INSTALLCLIENTTMPDIR)),)
+override INSTALLCLIENTTMPDIR = $(INSTALLTMPDIR)
+endif
+endif
+ifeq ($(strip $(INSTALLCLIENTETCDIR)),)
+override INSTALLCLIENTETCDIR = $(CLIENTHOME)/etc
+endif
+ifeq ($(strip $(INSTALLCLIENTBINDIR)),)
+override INSTALLCLIENTBINDIR = $(CLIENTHOME)/bin
+endif
+ifeq ($(strip $(INSTALLCLIENTTMPDIR)),)
+override INSTALLCLIENTTMPDIR = $(CLIENTHOME)/tmp
+endif
+ifeq ($(strip $(INSTALLCLIENTLOGDIR)),)
+override INSTALLCLIENTLOGDIR = $(CLIENTHOME)/logs
+endif
+
 ifndef INSTALLBINDIR
 INSTALLBINDIR = $(XYMONHOME)/bin
 endif
@@ -535,8 +569,46 @@ install-custom:
 
 client-install: install-client
 
-install-client: client
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install
+# Same shape as install-dirs does for the server: make the directory,
+# and when it is not the default leave a symlink where the default was,
+# so $XYMONCLIENTHOME/etc keeps resolving -- clientlaunch.cfg and the
+# server's tasks.cfg both spell it that way.
+#
+# A real directory where a link should go is an earlier install's: the
+# client still runs from it, so installing beside it would leave the client
+# on its old files. Stop instead, before anything is installed.
+#
+# Only a directory this rule creates is given to XYMONUSER: a relocated one
+# that already exists may be shared with the rest of the system. Its parents
+# are made 755 whatever the umask, or the xymon user could not reach it.
+CLIENTDIRS = etc:$(INSTALLCLIENTETCDIR) bin:$(INSTALLCLIENTBINDIR) tmp:$(INSTALLCLIENTTMPDIR) logs:$(INSTALLCLIENTLOGDIR)
+ifndef PKGBUILD
+CLIENTDIR_OWN = chown $(XYMONUSER) $(INSTALLROOT)$$to && chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$$to || exit 1;
+endif
+
+install-clientdirs:
+	@for p in $(CLIENTDIRS); do \
+		d=$${p%%:*}; to=$${p#*:}; to=$${to%/}; old=$(INSTALLROOT)$(CLIENTHOME)/$$d; \
+		test "$$to" = "$(CLIENTHOME)/$$d" && continue; \
+		if test -d $$old && test ! -L $$old; then \
+			echo "*** $(CLIENTHOME)/$$d is a real directory, but the client's $$d is now installed in $$to." >&2; \
+			echo "*** Move its contents to $$to and remove it, then install again." >&2; \
+			exit 1; \
+		fi; \
+	done
+	test -d $(INSTALLROOT)$(CLIENTHOME) || { (umask 022 && mkdir -p $(INSTALLROOT)$(CLIENTHOME)) && chmod 755 $(INSTALLROOT)$(CLIENTHOME); }
+	@for p in $(CLIENTDIRS); do \
+		d=$${p%%:*}; to=$${p#*:}; to=$${to%/}; old=$(INSTALLROOT)$(CLIENTHOME)/$$d; \
+		if test ! -d $(INSTALLROOT)$$to; then \
+			(umask 022 && mkdir -p $(INSTALLROOT)$$to) && chmod 755 $(INSTALLROOT)$$to || exit 1; \
+			$(CLIENTDIR_OWN) \
+		fi; \
+		test "$$to" = "$(CLIENTHOME)/$$d" && continue; \
+		rm -f $$old && ln -s $$to $$old || exit 1; \
+	done
+
+install-client: client install-clientdirs
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)"
 
 install-clientmsg:
 	@echo ""
@@ -544,5 +616,5 @@ install-clientmsg:
 	@echo ""
 	@echo "To start the Xymon client, as the $(XYMONUSER) user run '${XYMONHOME}/runclient.sh start'"
 
-install-localclient:
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient
+install-localclient: install-clientdirs
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)"

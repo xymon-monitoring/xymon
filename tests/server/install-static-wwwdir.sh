@@ -55,7 +55,9 @@ install_vars() {
 		"XYMONLOGDIR=$d/log" "XYMONRUNDIR=$d/run" "MANROOT=$d/man" \
 		"INSTALLBINDIR=$d/top/server/bin" "INSTALLETCDIR=$d/etc" \
 		"INSTALLEXTDIR=$d/top/server/ext" "INSTALLTMPDIR=$d/var/tmp" \
-		"INSTALLWEBDIR=$d/etc/web" "INSTALLWWWDIR=$d/var/www"
+		"INSTALLWEBDIR=$d/etc/web" "INSTALLWWWDIR=$d/var/www" \
+		"INSTALLCLIENTETCDIR=$d/top/client/etc" "INSTALLCLIENTBINDIR=$d/top/client/bin" \
+		"INSTALLCLIENTTMPDIR=$d/top/client/tmp" "INSTALLCLIENTLOGDIR=$d/top/client/logs"
 }
 
 # run_make DEST LOG TARGET [VAR=VALUE...] -- make TARGET with DEST's paths.

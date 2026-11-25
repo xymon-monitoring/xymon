@@ -36,6 +36,31 @@ void cleanup(char *inprogressfn, char *selffn)
 	if (selffn) unlink(selffn);
 }
 
+/*
+ * A bin, etc, tmp or logs that is a link was relocated at install time
+ * (INSTALLCLIENT*DIR) or by a packaging. The archive is extracted
+ * here, relative to XYMONHOME, and most tar implementations replace a
+ * link with the directory the archive names: the update would land
+ * beside the installed files and leave them stale. Returns 1, having
+ * said why, when the update must be refused.
+ */
+static int relocated(void)
+{
+	char *reloc[] = { "bin", "etc", "tmp", "logs", NULL };
+	struct stat st;
+	int i;
+
+	for (i = 0; reloc[i]; i++) {
+		if ((lstat(reloc[i], &st) == 0) && S_ISLNK(st.st_mode)) {
+			errprintf("%s/%s is a link to a relocated directory: a self-update would replace it with a real directory. Update this client through its package or install instead.\n",
+				  xgetenv("XYMONHOME"), reloc[i]);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int argi;
@@ -105,6 +130,9 @@ int main(int argc, char *argv[])
 				errprintf("clientupdate --reexec called with no update version\n");
 				return 1;
 			}
+
+			/* Before the lock file and the copy into XYMONTMP, not after. */
+			if (relocated()) return 1;
 
 			if ( (stat(inprogressfn, &st) == 0) && ((getcurrenttime(NULL) - st.st_mtime) < 3600) ) {
 				errprintf("Found update in progress or failed update (started %ld minutes ago)\n",
@@ -193,6 +221,12 @@ int main(int argc, char *argv[])
 
 	if (!newversion) {
 		errprintf("No new version string!\n");
+		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
+		return 1;
+	}
+
+	/* Also checked before --reexec; here for an --update run directly. */
+	if (relocated()) {
 		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		return 1;
 	}
