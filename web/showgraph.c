@@ -1388,6 +1388,16 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		}
 	}
 
+	/*
+	 * Look up now what the error page below reads. xgetenv() writes a
+	 * built-in default into the environment the first time one is asked
+	 * for, and rrd_graph may leave the thread Pango starts to load the
+	 * fonts ("[pango] FcInit") still running when it fails. That thread
+	 * calls getenv(), which crashes when the environment is reallocated
+	 * under it: asked for here, the value is already there afterwards.
+	 */
+	(void) xgetenv("HTMLCONTENTTYPE");
+
 	/* All set - generate the graph */
 	result = xymon_rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
 
@@ -1415,7 +1425,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		 * exit()'s teardown under it crashes that thread, and the CGI with
 		 * it, on a few percent of failed graphs. _exit() skips the teardown;
 		 * nothing here registers an atexit handler, so only stdout needs
-		 * flushing first.
+		 * flushing first. For the same thread, the page writes nothing
+		 * to the environment: see before the call to rrd_graph above.
 		 *
 		 * rrdtool's message quotes file names built from the request.
 		 */

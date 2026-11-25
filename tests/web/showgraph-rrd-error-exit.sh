@@ -9,6 +9,14 @@
 # down under that thread: it crashes in libc, and the CGI dies on a signal
 # instead of sending its error page, on a few percent of failed graphs.
 #
+# The same thread reads the environment with getenv(), so the error page must
+# not write to it either: xgetenv() does, the first time a built-in default
+# is asked for, and the thread then crashes in getenv(). Seen on Debian 12
+# (Pango 1.50.12), about one failed graph in two hundred. The requests below
+# leave HTMLCONTENTTYPE unset, so the page needs the default; cgiwrap
+# sets it from xymonserver.cfg (--env, cgioptions.cfg), and an installed
+# showgraph writes nothing there unless that file lacks the line.
+#
 # The crash is a race, so one request proves nothing: the test sends the
 # same failing request many times, in parallel, and checks that every one
 # ends with status 1 and the error page, none on a signal. Where the race
