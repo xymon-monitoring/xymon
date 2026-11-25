@@ -118,8 +118,9 @@ report "bash41-fd" '(^|[^$])\{[A-Za-z_][A-Za-z0-9_]*\}[<>]' \
 	"automatic fd allocation is bash 4.1; use an explicit descriptor (exec 9>...)"
 
 # Tool flags that exist on GNU and not on the BSDs, or mean different things.
-# head -c is not POSIX either: OpenBSD's head has none.
-report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readlink +-f|date +-d |head +-c' \
+# head -c is not POSIX either: OpenBSD's head has none. seq -f (the format
+# string) is a GNU extension BusyBox's seq rejects; build the value with awk.
+report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readlink +-f|date +-d |head +-c|seq +[^|]*-f' \
 	"GNU-only or differently-spelled on BSD/macOS; use a portable form"
 
 # cp -p and cp -a fail on Solaris when the tree is on ZFS and the copy goes to
@@ -542,6 +543,7 @@ probe="$work/probe.sh"
 	printf 'mapfile -t x < /dev/null\n'
 	printf 'sed -i s/a/b/ f\n'
 	printf 'head -c 2 f\n'
+	printf 'seq -f %s 1 3\n' 'h%g'
 	printf 'python3 -c pass\n'
 	printf 'grep -E %s x\n' "'\\bword\\b'"
 	printf 'chmod 500 d\n'
@@ -559,7 +561,7 @@ probe="$work/probe.sh"
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "17" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "18" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # And not over-eager: the helpers that replace those, and a test that only
 # asks whether the make tree is there, match none of the patterns.
