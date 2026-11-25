@@ -154,7 +154,7 @@ $5>0 {
 }
 ')
 # An empty inode report has two causes here and the server can only see one of
-# them: unix_inode_report() reads an empty section as green on purpose, for the
+# them: unix_inode_report() reads an empty section as nothing to check, for the
 # host where nothing keeps inode counts - that is the Solaris all-ZFS case, and
 # on AIX it is every row coming back with an itotal of 0. A df that died has to
 # be told apart from that, and only this side knows the exit status. So the

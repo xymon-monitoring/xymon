@@ -499,8 +499,8 @@ fs_all_excluded() {
 # END SHARED fs_all_excluded
 # emit_df INODEFLAG LABEL
 # Run df (optionally in inode mode) and reproduce the historical sed join.
-# The server reads an empty section as green, so a failed df must not pass
-# silently: on any nonzero exit with no output, emit a failure marker (no
+# The server reads an empty section as nothing to check, so a failed df must
+# not pass silently: on any nonzero exit with no output, emit a failure marker (no
 # recognisable df header) to drive the server yellow. A nonzero exit that still
 # prints mounts (e.g. one unreadable mount) and a clean empty exit 0 (Solaris
 # all-ZFS inodes) keep their output unchanged.
