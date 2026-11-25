@@ -302,15 +302,20 @@ install-servermsg:
 	@echo "To start Xymon, as the $(XYMONUSER) user run '${XYMONHOME}/bin/xymon.sh start'"
 	@echo "To view the Xymon webpages, go to http://${XYMONHOSTNAME}${XYMONHOSTURL}"
 
+# Each directory, and every parent mkdir -p makes for it, is created 755
+# whatever the umask, or a package built under umask 077 ships directories
+# the xymon user cannot enter: the chmod 755 below is skipped under PKGBUILD
+# and never reaches the parents. A directory that already exists is left as
+# it is.
 install-dirs:
-	mkdir -p $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR))
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
 	chmod 755 $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
 endif
 
-	mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
+	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLBINDIR))
 ifneq ($(INSTALLBINDIR),$(XYMONHOME)/bin)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/bin || true
 	ln -s $(INSTALLBINDIR) $(INSTALLROOT)$(XYMONHOME)/bin || true
@@ -321,7 +326,7 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)
 endif
 
-	mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)
+	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLETCDIR))
 ifneq ($(INSTALLETCDIR),$(XYMONHOME)/etc)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/etc || true
 	ln -s $(INSTALLETCDIR) $(INSTALLROOT)$(XYMONHOME)/etc || true
@@ -332,7 +337,7 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)
 endif
 
-	mkdir -p $(INSTALLROOT)$(INSTALLEXTDIR)
+	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLEXTDIR))
 ifneq ($(INSTALLEXTDIR),$(XYMONHOME)/ext)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/ext || true
 	ln -s $(INSTALLEXTDIR) $(INSTALLROOT)$(XYMONHOME)/ext || true
@@ -343,7 +348,7 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLEXTDIR)
 endif
 
-	mkdir -p $(INSTALLROOT)$(INSTALLTMPDIR)
+	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLTMPDIR))
 ifneq ($(INSTALLTMPDIR),$(XYMONHOME)/tmp)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/tmp || true
 	ln -s $(INSTALLTMPDIR) $(INSTALLROOT)$(XYMONHOME)/tmp || true
@@ -354,7 +359,7 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLTMPDIR)
 endif
 
-	mkdir -p $(INSTALLROOT)$(INSTALLWEBDIR)
+	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLWEBDIR))
 ifneq ($(INSTALLWEBDIR),$(XYMONHOME)/web)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/web || true
 	ln -s $(INSTALLWEBDIR) $(INSTALLROOT)$(XYMONHOME)/web || true
@@ -365,7 +370,7 @@ ifndef PKGBUILD
 	chmod 755 $(INSTALLROOT)$(INSTALLWEBDIR)
 endif
 
-	mkdir -p $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
+	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap)
 ifneq ($(INSTALLSTATICWWWDIR),$(INSTALLWWWDIR))
 	@for d in gifs help menu; do \
 		if test -d $(INSTALLROOT)$(INSTALLWWWDIR)/$$d && test ! -L $(INSTALLROOT)$(INSTALLWWWDIR)/$$d; then \
@@ -392,56 +397,56 @@ endif
 	chmod g+w $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 endif
 
-	mkdir -p $(INSTALLROOT)$(XYMONVAR)/acks
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/acks)
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/acks
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/acks
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/acks
 endif
 
-	mkdir -p $(INSTALLROOT)$(XYMONVAR)/data
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/data)
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/data
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/data
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/data
 endif
 
-	mkdir -p $(INSTALLROOT)$(XYMONVAR)/disabled
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/disabled)
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/disabled
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/disabled
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/disabled
 endif
 
-	mkdir -p $(INSTALLROOT)$(XYMONVAR)/hist
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/hist)
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/hist
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/hist
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/hist
 endif
 
-	mkdir -p $(INSTALLROOT)$(XYMONVAR)/histlogs
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/histlogs)
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/histlogs || echo "Warning: Could not set owner on the histlogs directory"
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/histlogs || echo "Warning: Could not set group on the histlogs directory"
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/histlogs
 endif
 
-	mkdir -p $(INSTALLROOT)$(XYMONVAR)/hostdata
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/hostdata)
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/hostdata || echo "Warning: Could not set owner on the hostdata directory"
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/hostdata || echo "Warning: Could not set group on the hostdata directory"
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/hostdata
 endif
 
-	mkdir -p $(INSTALLROOT)$(XYMONVAR)/logs
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/logs)
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/logs
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/logs
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/logs
 endif
 
-	mkdir -p $(INSTALLROOT)$(XYMONVAR)/rrd
+	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/rrd)
 ifndef PKGBUILD
 	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/rrd
 	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/rrd
