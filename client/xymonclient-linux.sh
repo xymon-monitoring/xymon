@@ -584,7 +584,14 @@ then
 fi
 
 # vmstat
-nohup sh -c "vmstat 300 2 1>$XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ $XYMONTMP/xymon_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+# Detached: the sample takes its whole interval, and the next run reports it.
+# A collector ended before that -- the launcher stopped, the host went down --
+# has not printed its sample, so its file is removed and not reported. The
+# trap is what lets the shell outlive the signal to do that, and the signal
+# is ignored before rm runs: a stop often signals twice, and the second one
+# would end rm with the file still there. "15", not "TERM", for the Bourne
+# shells that take numbers only.
+nohup sh -c "ended=; trap 'ended=1' 15; vmstat 300 2 1>$XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; if test -z \"\$ended\"; then mv $XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ $XYMONTMP/xymon_vmstat.$MACHINEDOTS; else trap '' 15; rm -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$; fi" </dev/null >/dev/null 2>&1 &
 sleep 5
 if test -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $XYMONTMP/xymon_vmstat.$MACHINEDOTS; rm -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; fi
 
