@@ -44,7 +44,8 @@ all of them (except "config", "query" and "download" messages,
 which go to the LAST server only). If you have Xymon clients
 sending their data via this proxy, note that the clients will
 receive their configuration data from the LAST of the servers
-listed here.  This option is required.
+listed here, or, when that one cannot be reached, from the last
+server before it that was.  This option is required.
 
 .IP "\fB\-\-listen\fR=\fILOCALIP\fR[:\fIPORT\fR]"
 Specifies the IP-adress where xymonproxy listens for incoming
