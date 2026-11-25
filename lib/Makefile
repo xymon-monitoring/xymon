@@ -121,11 +121,30 @@ sha1.o: sha1.c test-endianness
 rmd160c.o: rmd160c.c test-endianness
 	$(CC) $(CPPFLAGS) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
-environ.o: environ.c $(wildcard ../build/build-id)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
+# The client directories this build relocated, compiled into environ.c's
+# table; empty for a directory left under the client's home. clientdirs.def
+# records them and is rewritten only when they change, so a tree configured
+# again with other directories rebuilds environ, and install can tell a
+# directory named on its own command line from the one that was compiled.
+CLIENTDIRDEFS =
+ifneq ($(strip $(XYMONCLIENTTMPDIRDEF)),)
+CLIENTDIRDEFS += -DXYMONCLIENTTMPDIR=\"$(XYMONCLIENTTMPDIRDEF)\"
+endif
+ifneq ($(strip $(XYMONCLIENTLOGDIRDEF)),)
+CLIENTDIRDEFS += -DXYMONCLIENTLOGDIR=\"$(XYMONCLIENTLOGDIRDEF)\"
+endif
 
-environ-client.o: environ.c $(wildcard ../build/build-id)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONCLIENTHOME)\" -c -o $@ environ.c
+.PHONY: FORCE
+FORCE:
+
+clientdirs.def: FORCE
+	@new='$(XYMONCLIENTTMPDIRDEF)|$(XYMONCLIENTLOGDIRDEF)'; test -f $@ && test "`cat $@`" = "$$new" || echo "$$new" > $@
+
+environ.o: environ.c clientdirs.def $(wildcard ../build/build-id)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(CLIENTDIRDEFS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
+
+environ-client.o: environ.c clientdirs.def $(wildcard ../build/build-id)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(CLIENTDIRDEFS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONCLIENTHOME)\" -c -o $@ environ.c
 
 color-client.o: color.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
@@ -187,4 +206,4 @@ install-tools: $(LIBTOOLS)
 	$(INSTALLSAFE) copy -m 644 $(ISOWN) xymontools.1 $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
 
 clean:
-	rm -f *.o *.a *~ $(LIBTOOLS) test-endianness md5 sha1 rmd160 tree
+	rm -f *.o *.a *~ $(LIBTOOLS) test-endianness md5 sha1 rmd160 tree clientdirs.def

@@ -33,8 +33,18 @@ $XYMONCLIENTHOME setting inherited from the "runclient.sh"
 script which starts the Xymon client.
 
 .IP "\fBXYMONCLIENTLOGS\fR"
-The directory for the Xymon clients' own log files. Default:
-$XYMONHOME/logs
+The directory for the Xymon clients' own log files. The shipped value is
+$XYMONCLIENTLOGDIR, the directory the client was built to log in:
+$XYMONHOME/logs, or the one a build moved it to with INSTALLCLIENTLOGDIR.
+The programs know that directory, not this file, so a client installed
+again to another directory needs no change here. To override it, set
+XYMONCLIENTLOGS in a file under $XYMONHOME/etc/xymonclient.d, which this
+file includes after this line, rather than editing the line itself.
+A value is expanded where it is set: the settings this file derives from
+XYMONCLIENTLOGS before the include keep the shipped directory, so set them
+in xymonclient.d as well when they must follow. They are BBCLIENTLOGS, and
+XYMONCLIENTRUNDIR, where msgcache writes its pidfile, unless the build set
+XYMONCLIENTRUNDIR to a directory of its own.
 
 .IP "\fBXYMONCLIENTRUNDIR\fR"
 The directory for the client's runtime files: msgcache's pidfile. Default:
@@ -46,7 +56,12 @@ does not create it, so it must exist and be writable by the user running the
 client.
 
 .IP "\fBXYMONTMP\fR"
-Directory used for temporary files. Default: $XYMONHOME/tmp/
+Directory used for temporary files. The shipped value is $XYMONCLIENTTMPDIR,
+the directory the client was built to use: $XYMONHOME/tmp, or the one a
+build moved it to with INSTALLCLIENTTMPDIR (in a client\-only build, also
+INSTALLTMPDIR). Override it as XYMONCLIENTLOGS, in a file under
+xymonclient.d. BBTMP, derived from it before the include, keeps the
+shipped directory unless it is set there as well.
 
 .IP "\fBXYMONCLIENT_FS_INCLUDE_TYPES\fR"
 Whitespace-separated filesystem types to include in the client's disk
