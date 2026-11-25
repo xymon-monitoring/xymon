@@ -399,7 +399,7 @@ cd "$ROOT"
 if git ls-files --error-unmatch lib/loadhosts.c >/dev/null 2>&1; then
 	git ls-files -- '*.c' | { xargs -r grep -l 'xmh_item' || true; } > "$work/files"
 else
-	find . -name '*.c' -type f -print \
+	tree_find "$ROOT" -name '*.c' -type f \
 		| { xargs -r grep -l 'xmh_item' || true; } > "$work/files"
 fi
 [ -s "$work/files" ] || fail "found no xmh_item() call sites -- the parser is stale"

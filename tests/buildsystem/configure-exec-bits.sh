@@ -28,7 +28,7 @@ mkdir -p "$t/build" "$t/client"
 
 # The build/ files the Makefiles run, as shipped scripts: a #! first line.
 scripts=""
-for name in $(find "$ROOT" -name 'Makefile*' -type f ! -path "$ROOT/tests/*" -exec cat {} + \
+for name in $(tree_find "$ROOT" -name 'Makefile*' -type f ! -path './tests/*' | (cd "$ROOT" && xargs cat) \
 		| grep -oE '(^|[^[:alnum:]_.-])build/[[:alnum:]_.-]+' \
 		| sed 's|.*build/||' | sort -u); do
 	[ -f "$ROOT/build/$name" ] || continue

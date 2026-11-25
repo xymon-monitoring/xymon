@@ -21,7 +21,7 @@ ROOT=$(find_root)
 
 work=$(mktempdir)
 pages=""
-for f in $(cd "$ROOT" && find . -name '*.[1-8]' -type f ! -path './tests/*' | sed 's|^\./||' | sort); do
+for f in $(tree_find "$ROOT" -name '*.[1-8]' -type f ! -path './tests/*'); do
 	first=
 	IFS= read -r first <"$ROOT/$f" || true
 	case $first in '.TH '*) ;; *) continue ;; esac

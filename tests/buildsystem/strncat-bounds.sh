@@ -78,7 +78,7 @@ assert_equal "3" "$(wc -l <"$work/probe" | tr -d " ")" \
 if [ "$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null)" = "$(cd "$ROOT" && pwd -P)" ]; then
 	cfiles=$(cd "$ROOT" && git ls-files '*.c')
 else
-	cfiles=$(cd "$ROOT" && find . -name .git -prune -o -type f -name '*.c' -print | sed 's|^\./||' | sort)
+	cfiles=$(tree_find "$ROOT" -type f -name '*.c')
 fi
 for f in $cfiles; do
 	awk -v FILE="$f" -f "$detector" "$ROOT/$f" >>"$work/found" || true
