@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
 	char *histdir = NULL;
 	char *histlogdir = NULL;
 	char *msg;
+	struct timespec *timeout = NULL;
 	int argi, seq;
 	int save_allevents = 1;
 	int save_hostevents = 1;
@@ -190,6 +191,10 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 	}
+
+	/* default idle timeout of 10s */
+	timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
+	timeout->tv_sec = 10; timeout->tv_nsec = 0;
 
 	if (xgetenv("XYMONHISTDIR") && (histdir == NULL)) {
 		histdir = strdup(xgetenv("XYMONHISTDIR"));
@@ -255,7 +260,7 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 		else {
-			setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
+			setvbuf(alleventsfd, (char *)NULL, _IOFBF, 0);
 		}
 	}
 
@@ -288,11 +293,11 @@ int main(int argc, char *argv[])
 				errprintf("Cannot re-open the all-events file '%s'\n", alleventsfn);
 			}
 			else {
-				setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
+				setvbuf(alleventsfd, (char *)NULL, _IOFBF, 0);
 			}
 		}
 
-		msg = get_xymond_message(C_STACHG, "xymond_history", &seq, NULL);
+		msg = get_xymond_message(C_STACHG, "xymond_history", &seq, timeout);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -685,7 +690,6 @@ int main(int argc, char *argv[])
 				fprintf(alleventsfd, "%s %s %d %d %d %s %s %d\n",
 					hostname, testname, (int)tstamp, (int)lastchg, (int)(tstamp - lastchg),
 					newcol2, oldcol2, trend);
-				fflush(alleventsfd);
 			}
 
 			xfree(hostnamecommas);
@@ -929,7 +933,9 @@ int main(int argc, char *argv[])
 			}
 		}
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
-			/* Nothing */
+			dbgprintf("Got an 'idle' message\n");
+			if (alleventsfd) fflush(alleventsfd);
+			continue;
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
@@ -940,6 +946,7 @@ int main(int argc, char *argv[])
 				reopen_file(fn, "a", stdout);
 				reopen_file(fn, "a", stderr);
 			}
+			if (alleventsfd) fflush(alleventsfd);
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
