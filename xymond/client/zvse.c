@@ -554,7 +554,7 @@ static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t 
                         addtobuffer(upmsg, tempresult);
                         }
                 else if (used24p > (float)gv24yel) {
-                        memorycolor = COL_YELLOW;
+                        if (memorycolor < COL_YELLOW) memorycolor = COL_YELLOW;
                         getvisok=0;
                         sprintf(tempresult,"&yellow 24-bit Getvis utilization for %s is HIGH\n", pid);
                         addtobuffer(upmsg, tempresult);
@@ -567,7 +567,7 @@ static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t 
                         addtobuffer(upmsg, tempresult);
                         }
                 else if (usedanyp > (float)gvanyyel) {
-                        memorycolor = COL_YELLOW;
+                        if (memorycolor < COL_YELLOW) memorycolor = COL_YELLOW;
                         getvisok=0;
                         sprintf(tempresult,"&yellow Any Getvis utilization for %s is HIGH\n", pid);
                         addtobuffer(upmsg, tempresult);
