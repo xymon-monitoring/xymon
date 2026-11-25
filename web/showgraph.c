@@ -1388,6 +1388,17 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		}
 	}
 
+	/*
+	 * rrd_graph starts a thread that reads the environment while it runs:
+	 * Pango's "[pango] FcInit", in getenv(). xgetenv() writes a variable's
+	 * built-in default into the environment the first time it is asked for
+	 * one that is unset, and that setenv() can move the environment under
+	 * the thread's getenv(), which then crashes, and the CGI with it. So
+	 * nothing may be asked of xgetenv() for the first time after this call:
+	 * what the error page below needs is resolved here, before it.
+	 */
+	(void) xgetenv("HTMLCONTENTTYPE");
+
 	/* All set - generate the graph */
 	result = xymon_rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
 
