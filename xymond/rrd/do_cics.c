@@ -34,7 +34,7 @@ int do_cics_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		pr += 1;
 		pr = strtok(pr, "\n");
 		while (pr != NULL) {
-			sscanf(pr, "%s %d %f %f", cicsappl, &numtrans, &dsapct, &edsapct); 
+			sscanf(pr, "%8s %d %f %f", cicsappl, &numtrans, &dsapct, &edsapct);
 			snprintf(rrdfn, sizeof(rrdfn), "cics.%-s.rrd", cicsappl);
 			setupfn(rrdfn, fn);
 			snprintf(rrdvalues, sizeof(rrdvalues), "%d:%d", (int)tstamp, numtrans);
