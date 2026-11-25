@@ -702,8 +702,8 @@ int main(int argc, char *argv[])
 			SBUF_MALLOC(svcscmd, strlen(re) + 1024);
 
 			snprintf(xymoncmd, xymoncmd_buflen, "xymondboard page=%s fields=hostname,testname", re);
-			snprintf(procscmd, procscmd_buflen, "xymondboard page=%s test=procs fields=hostname,msg", re);
-			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard page=%s test=svcs fields=hostname,msg", re);
+			snprintf(procscmd, procscmd_buflen, "xymondboard page=%s test=^procs$ fields=hostname,msg", re);
+			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard page=%s test=^svcs$ fields=hostname,msg", re);
 			xfree(re);
 		}
 		else
@@ -723,8 +723,8 @@ int main(int argc, char *argv[])
 			SBUF_MALLOC(svcscmd, strlen(re) + 1024);
 
 			snprintf(xymoncmd, xymoncmd_buflen, "xymondboard host=^%s$ fields=hostname,testname", re);
-			snprintf(procscmd, procscmd_buflen, "xymondboard host=^%s$ test=procs fields=hostname,msg", re);
-			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard host=^%s$ test=svcs fields=hostname,msg", re);
+			snprintf(procscmd, procscmd_buflen, "xymondboard host=^%s$ test=^procs$ fields=hostname,msg", re);
+			snprintf(svcscmd,  svcscmd_buflen,  "xymondboard host=^%s$ test=^svcs$ fields=hostname,msg", re);
 			xfree(re);
 		}
 		else
@@ -736,8 +736,8 @@ int main(int argc, char *argv[])
 		SBUF_MALLOC(svcscmd, 1024);
 
 		snprintf(xymoncmd, xymoncmd_buflen, "xymondboard fields=hostname,testname");
-		snprintf(procscmd, procscmd_buflen, "xymondboard test=procs fields=hostname,msg");
-		snprintf(svcscmd, svcscmd_buflen,   "xymondboard test=svcs fields=hostname,msg");
+		snprintf(procscmd, procscmd_buflen, "xymondboard test=^procs$ fields=hostname,msg");
+		snprintf(svcscmd, svcscmd_buflen,   "xymondboard test=^svcs$ fields=hostname,msg");
 	}
 
 	if (patternerror) {

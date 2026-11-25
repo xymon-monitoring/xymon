@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 				SBUF_CALLOC(filter, 1, needed);
 			}
 
-			snprintf(filter + curlen, filter_buflen - curlen, " test=%s", p+1);
+			snprintf(filter + curlen, filter_buflen - curlen, " test=^(%s)$", p+1);	/* the whole name; a pattern of names stays whole too */
 
 			if (!heading) {
 				SBUF_MALLOC(heading, 1024 + strlen(p) + strlen(timestamp));
