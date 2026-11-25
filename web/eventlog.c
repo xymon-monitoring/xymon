@@ -51,6 +51,33 @@ cgidata_t *cgidata = NULL;
 char 	*periodstring = NULL;
 
 
+/*
+ * Add "^NAME$" to BUF, a pattern that matches the name NAME and no other:
+ * every character that is not a letter or a digit gets a backslash, which
+ * PCRE reads as that character itself, so the '.' of a host name is a dot.
+ */
+static void addnamematch(strbuffer_t *buf, char *name)
+{
+	char c[3] = "\\";
+
+	addtobuffer(buf, "^");
+	for (; (*name); name++) {
+		c[1] = *name;
+		addtobuffer(buf, isalnum((unsigned char)*name) ? c+1 : c);
+	}
+	addtobuffer(buf, "$");
+}
+
+/* Add "&amp;NAME=VALUE" to BUF, VALUE percent-encoded: a criterion the
+   viewer gave, carried on in the links of the page */
+static void addcriterion(strbuffer_t *buf, char *name, char *value)
+{
+	addtobuffer(buf, "&amp;");
+	addtobuffer(buf, name);
+	addtobuffer(buf, "=");
+	addtobuffer(buf, urlencode(value ? value : ""));
+}
+
 static void parse_query(void)
 {
 	cgidata_t *cwalk;
@@ -132,39 +159,33 @@ void show_topchanges(FILE *output,
 		int i;
 		unsigned long others = 0, totalcount = 0;
 		strbuffer_t *s = newstrbuffer(0);
+		strbuffer_t *one = newstrbuffer(0);
 		strbuffer_t *othercriteria = newstrbuffer(0);
 
 		if (hostregex) {
-			addtobuffer(othercriteria, "&amp;HOSTMATCH=");
-			addtobuffer(othercriteria, hostregex);
+			addcriterion(othercriteria, "HOSTMATCH", hostregex);
 		}
 		if (exhostregex) addtobuffer(s, exhostregex);
 		if (testregex) {
-			addtobuffer(othercriteria, "&amp;TESTMATCH=");
-			addtobuffer(othercriteria, testregex);
+			addcriterion(othercriteria, "TESTMATCH", testregex);
 		}
 		if (extestregex) {
-			addtobuffer(othercriteria, "&amp;EXTESTMATCH=");
-			addtobuffer(othercriteria, extestregex);
+			addcriterion(othercriteria, "EXTESTMATCH", extestregex);
 		}
 		if (pageregex) {
-			addtobuffer(othercriteria, "&amp;PAGEMATCH=");
-			addtobuffer(othercriteria, pageregex);
+			addcriterion(othercriteria, "PAGEMATCH", pageregex);
 		}
 		if (expageregex) {
-			addtobuffer(othercriteria, "&amp;EXPAGEMATCH=");
-			addtobuffer(othercriteria, expageregex);
+			addcriterion(othercriteria, "EXPAGEMATCH", expageregex);
 		}
 		if (colorregex) {
-			addtobuffer(othercriteria, "&amp;COLORMATCH=");
-			addtobuffer(othercriteria, colorregex);
+			addcriterion(othercriteria, "COLORMATCH", colorregex);
 		}
 		if (ignoredialups) {
 			addtobuffer(othercriteria, "&amp;NODIALUPS=on");
 		}
 		addtobuffer(othercriteria, "&amp;SUMMARY=services");
-		addtobuffer(othercriteria, "&amp;TIMETXT=");
-		addtobuffer(othercriteria, periodstring);
+		addcriterion(othercriteria, "TIMETXT", periodstring);
 		if (counttype == XYMON_COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
 		else if (counttype == XYMON_COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
 
@@ -179,23 +200,23 @@ void show_topchanges(FILE *output,
 
 		for (i=0, cwalk=hostcounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
-					xmh_item(cwalk->src, XMH_HOSTNAME), 
+				clearstrbuffer(one);
+				addnamematch(one, xmh_item(cwalk->src, XMH_HOSTNAME));
+				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s&amp;HOSTMATCH=%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
+					urlencode(STRBUF(one)),
 					xmh_item(cwalk->src, XMH_HOSTNAME), 
 					cwalk->total, ((100.0 * cwalk->total) / totalcount));
 				if (STRBUFLEN(s) > 0) addtobuffer(s, "|"); 
-				addtobuffer(s, "^");
-				addtobuffer(s, xmh_item(cwalk->src, XMH_HOSTNAME));
-				addtobuffer(s, "$");
+				addnamematch(s, xmh_item(cwalk->src, XMH_HOSTNAME));
 			}
 			else {
 				others += cwalk->total;
 			}
 		}
 		fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?EXHOSTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
-			STRBUF(s),
+			urlencode(STRBUF(s)),
 			(unsigned long)firstevent, (unsigned long)lastevent,
 			STRBUF(othercriteria),
 			"Other hosts", 
@@ -206,6 +227,7 @@ void show_topchanges(FILE *output,
 		fprintf(output, "</td>\n");
 
 		freestrbuffer(s);
+		freestrbuffer(one);
 		freestrbuffer(othercriteria);
 	}
 	if (svccounthead && (output != NULL)) {
@@ -213,39 +235,33 @@ void show_topchanges(FILE *output,
 		int i;
 		unsigned long others = 0, totalcount = 0;
 		strbuffer_t *s = newstrbuffer(0);
+		strbuffer_t *one = newstrbuffer(0);
 		strbuffer_t *othercriteria = newstrbuffer(0);
 
 		if (hostregex) {
-			addtobuffer(othercriteria, "&amp;HOSTMATCH=");
-			addtobuffer(othercriteria, hostregex);
+			addcriterion(othercriteria, "HOSTMATCH", hostregex);
 		}
 		if (exhostregex) {
-			addtobuffer(othercriteria, "&amp;EXHOSTMATCH=");
-			addtobuffer(othercriteria, exhostregex);
+			addcriterion(othercriteria, "EXHOSTMATCH", exhostregex);
 		}
 		if (testregex) {
-			addtobuffer(othercriteria, "&amp;TESTMATCH=");
-			addtobuffer(othercriteria, testregex);
+			addcriterion(othercriteria, "TESTMATCH", testregex);
 		}
 		if (extestregex) addtobuffer(s, extestregex);
 		if (pageregex) {
-			addtobuffer(othercriteria, "&amp;PAGEMATCH=");
-			addtobuffer(othercriteria, pageregex);
+			addcriterion(othercriteria, "PAGEMATCH", pageregex);
 		}
 		if (expageregex) {
-			addtobuffer(othercriteria, "&amp;EXPAGEMATCH=");
-			addtobuffer(othercriteria, expageregex);
+			addcriterion(othercriteria, "EXPAGEMATCH", expageregex);
 		}
 		if (colorregex) {
-			addtobuffer(othercriteria, "&amp;COLORMATCH=");
-			addtobuffer(othercriteria, colorregex);
+			addcriterion(othercriteria, "COLORMATCH", colorregex);
 		}
 		if (ignoredialups) {
 			addtobuffer(othercriteria, "&amp;NODIALUPS=on");
 		}
 		addtobuffer(othercriteria, "&amp;SUMMARY=hosts");
-		addtobuffer(othercriteria, "&amp;TIMETXT=");
-		addtobuffer(othercriteria, periodstring);
+		addcriterion(othercriteria, "TIMETXT", periodstring);
 		if (counttype == XYMON_COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
 		else if (counttype == XYMON_COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
 
@@ -261,23 +277,23 @@ void show_topchanges(FILE *output,
 
 		for (i=0, cwalk=svccounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
-					((htnames_t *)cwalk->src)->name, 
+				clearstrbuffer(one);
+				addnamematch(one, ((htnames_t *)cwalk->src)->name);
+				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s&amp;TESTMATCH=%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
+					urlencode(STRBUF(one)),
 					((htnames_t *)cwalk->src)->name, 
 					cwalk->total, ((100.0 * cwalk->total) / totalcount));
 				if (STRBUFLEN(s) > 0) addtobuffer(s, "|"); 
-				addtobuffer(s, "^");
-				addtobuffer(s, ((htnames_t *)cwalk->src)->name);
-				addtobuffer(s, "$");
+				addnamematch(s, ((htnames_t *)cwalk->src)->name);
 			}
 			else {
 				others += cwalk->total;
 			}
 		}
 		fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?EXTESTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
-			STRBUF(s),
+			urlencode(STRBUF(s)),
 			(unsigned long)firstevent, (unsigned long)lastevent,
 			STRBUF(othercriteria),
 			"Other services", 
@@ -288,6 +304,7 @@ void show_topchanges(FILE *output,
 		fprintf(output, "</td>\n");
 
 		freestrbuffer(s);
+		freestrbuffer(one);
 		freestrbuffer(othercriteria);
 	}
 	fprintf(output, "</tr>\n");
