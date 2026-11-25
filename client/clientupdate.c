@@ -37,7 +37,7 @@ void cleanup(char *inprogressfn, char *selffn)
 }
 
 /*
- * A bin, etc, tmp or logs that is a link was relocated at install time
+ * A bin, etc, tmp, logs or ext that is a link was relocated at install time
  * (INSTALLCLIENT*DIR) or by a packaging. The archive is extracted
  * here, relative to XYMONHOME, and most tar implementations replace a
  * link with the directory the archive names: the update would land
@@ -46,7 +46,7 @@ void cleanup(char *inprogressfn, char *selffn)
  */
 static int relocated(void)
 {
-	char *reloc[] = { "bin", "etc", "tmp", "logs", NULL };
+	char *reloc[] = { "bin", "etc", "tmp", "logs", "ext", NULL };
 	struct stat st;
 	int i;
 
