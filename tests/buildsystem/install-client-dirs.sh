@@ -124,6 +124,25 @@ done
 [ -d "$work/homeslash$home/etc" ] && [ ! -L "$work/homeslash$home/etc" ] \
 	|| fail "XYMONCLIENTHOME=$home/ made $home/etc a relocation"
 
+# ---- the default spelled otherwise: a doubled slash, a symlinked parent -----
+# Neither is $home/etc by name, but both are the same directory: no link, no
+# stop, on the first install and the second. via is a link in the scratch
+# root to the home, as /home is to /export/home on Solaris.
+mkdir -p "$work/dslash" "$work/via"
+ln -s "${home#/}" "$work/via/lnk"
+for spelling in dslash:$home//etc via:/lnk/etc; do
+	r=$work/${spelling%%:*} to=${spelling#*:}
+	for n in 1 2; do
+		# shellcheck disable=SC2086
+		run_install "$r" $unset_dirs INSTALLCLIENTETCDIR="$to" \
+			|| fail "install $n with INSTALLCLIENTETCDIR=$to, which is $home/etc, failed: $(cat "$r.log")"
+		! grep -q '\*\*\*' "$r.log" || fail "install $n with INSTALLCLIENTETCDIR=$to, which is $home/etc, drew a message: $(grep '\*\*\*' "$r.log")"
+	done
+	[ -d "$r$home/etc" ] && [ ! -L "$r$home/etc" ] \
+		|| fail "INSTALLCLIENTETCDIR=$to was taken for a relocation: $home/etc is not a real directory"
+	[ -f "$r$home/etc/xymonclient.cfg" ] || fail "INSTALLCLIENTETCDIR=$to put no xymonclient.cfg in $home/etc"
+done
+
 # ---- parents a relocation creates are 755, whatever the umask ---------------
 mkdir -p "$work/parents"
 # shellcheck disable=SC2086
@@ -159,4 +178,4 @@ run_install "$work/shared" $reloc PKGBUILD= \
 mode=$(ls -ld "$work/shared/etc/xymon-client" | cut -c1-10)
 [ "$mode" = drwx------ ] || fail "install-client changed an existing relocated etc's mode to $mode"
 
-pass "install-client puts the client's etc, bin, tmp and logs where INSTALLCLIENT*DIR say, or a client-only build's INSTALLETCDIR/BINDIR/TMPDIR, links the old paths to them, changes nothing when they are unset or empty, keeps the client's home 755, makes the drop-in directories, stops on a real directory in the way, and leaves an existing relocated directory's mode alone"
+pass "install-client puts the client's etc, bin, tmp and logs where INSTALLCLIENT*DIR say, or a client-only build's INSTALLETCDIR/BINDIR/TMPDIR, links the old paths to them, changes nothing when they are unset, empty or another spelling of the default, keeps the client's home 755, makes the drop-in directories, stops on a real directory in the way, and leaves an existing relocated directory's mode alone"

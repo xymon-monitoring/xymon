@@ -586,7 +586,21 @@ client-install: install-client
 # Only a directory this rule creates is given to XYMONUSER: a relocated one
 # that already exists may be shared with the rest of the system. Its parents
 # are made 755 whatever the umask, or the xymon user could not reach it.
+#
+# A directory is the default when it is $(CLIENTHOME)/etc by name, or when
+# it and the default both exist and are the same directory. Comparing names
+# alone is not enough: /xc//etc, /xc/./etc and a path through a symlinked
+# parent all name /xc/etc, and taken for a relocation they would stop a
+# reinstall on "is a real directory", or have a first install replace the
+# directory it has just made with a link to itself. Both are resolved under
+# INSTALLROOT with "cd && pwd -P", which build/build-id.sh already needs of
+# the shell in every build, unlike realpath, readlink -f or test -ef; an
+# empty answer is never taken for a match. cd's own output is discarded: with
+# CDPATH set and a relative INSTALLROOT, cd prints the directory it chose,
+# and that line would be compared too. The second loop compares after it
+# creates the directory, so a first install finds the two the same too.
 CLIENTDIRS = etc:$(INSTALLCLIENTETCDIR) bin:$(INSTALLCLIENTBINDIR) tmp:$(INSTALLCLIENTTMPDIR) logs:$(INSTALLCLIENTLOGDIR)
+CLIENTDIR_DEFAULT = { test "$$to" = "$(CLIENTHOME)/$$d" || { test -d $(INSTALLROOT)$$to && test -d $$old && here=`cd $(INSTALLROOT)$$to >/dev/null && pwd -P` && test -n "$$here" && test "$$here" = "`cd $$old >/dev/null && pwd -P`"; }; }
 ifndef PKGBUILD
 CLIENTDIR_OWN = chown $(XYMONUSER) $(INSTALLROOT)$$to && chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$$to || exit 1;
 endif
@@ -594,7 +608,7 @@ endif
 install-clientdirs:
 	@for p in $(CLIENTDIRS); do \
 		d=$${p%%:*}; to=$${p#*:}; to=$${to%/}; old=$(INSTALLROOT)$(CLIENTHOME)/$$d; \
-		test "$$to" = "$(CLIENTHOME)/$$d" && continue; \
+		$(CLIENTDIR_DEFAULT) && continue; \
 		if test -d $$old && test ! -L $$old; then \
 			echo "*** $(CLIENTHOME)/$$d is a real directory, but the client's $$d is now installed in $$to." >&2; \
 			echo "*** Move its contents to $$to and remove it, then install again." >&2; \
@@ -608,7 +622,7 @@ install-clientdirs:
 			(umask 022 && mkdir -p $(INSTALLROOT)$$to) && chmod 755 $(INSTALLROOT)$$to || exit 1; \
 			$(CLIENTDIR_OWN) \
 		fi; \
-		test "$$to" = "$(CLIENTHOME)/$$d" && continue; \
+		$(CLIENTDIR_DEFAULT) && continue; \
 		rm -f $$old && ln -s $$to $$old || exit 1; \
 	done
 
