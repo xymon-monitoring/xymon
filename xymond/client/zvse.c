@@ -18,7 +18,7 @@ static void zvse_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
                      char *cpuutilstr, char *uptimestr)
 {
         char *p;
-        float load1, loadyellow, loadred;
+        float load1 = 0.0, loadyellow, loadred;
         int recentlimit, ancientlimit, uptimecolor, maxclockdiff, clockdiffcolor;
         int  uphour, upmin;
         char loadresult[100];
@@ -42,20 +42,22 @@ static void zvse_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
          * z/VSE: "Uptime: 1 Days, 13 Hours, 38 Minutes"
          */
 
-        sscanf(uptimestr,"Uptime: %ld Days, %d Hours, %d Minutes", &upday, &uphour, &upmin);
-        uptimesecs = upday * 86400;
-        uptimesecs += 60*(60*uphour + upmin);
-        sprintf(myupstr, "%s\n", uptimestr);
+        if (sscanf(uptimestr,"Uptime: %ld Days, %d Hours, %d Minutes", &upday, &uphour, &upmin) == 3) {
+                uptimesecs = upday * 86400;
+                uptimesecs += 60*(60*uphour + upmin);
+        }
+        else uptimesecs = -1;
+        snprintf(myupstr, sizeof(myupstr), "%s\n", uptimestr);
 
         /*
          *  Looking for average CPU Utilization in CPU message
          *  Avg CPU=000%
          */
         *loadresult = '\0';
-        p = strstr(cpuutilstr, "Avg CPU=") + 8 ;
+        p = strstr(cpuutilstr, "Avg CPU="); if (p) p += 8;
         if (p) {
                 if (sscanf(p, "%f%%", &load1) == 1) {
-                        sprintf(loadresult, "z/VSE CPU Utilization %3.0f%%\n", load1);
+                        snprintf(loadresult, sizeof(loadresult), "z/VSE CPU Utilization %3.0f%%\n", load1);
                 }
         }
 
@@ -74,17 +76,17 @@ static void zvse_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
         if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
                 if (cpucolor != COL_RED) cpucolor = uptimecolor;
-                sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+                snprintf(msgline, sizeof(msgline), "&%s Machine recently rebooted\n", colorname(uptimecolor));
                 addtobuffer(upmsg, msgline);
         }
         if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
                 if (cpucolor != COL_RED) cpucolor = uptimecolor;
-                sprintf(msgline, "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
+                snprintf(msgline, sizeof(msgline), "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
                 addtobuffer(upmsg, msgline);
         }
 
         init_status(cpucolor);
-        sprintf(msgline, "status %s.cpu %s %s %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.cpu %s %s %s %s %s\n",
                 commafy(hostname), colorname(cpucolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 loadresult,
@@ -122,15 +124,15 @@ static void zvse_paging_report(char *hostname, char *clientclass, enum ostype_t 
         *pagingresult = '\0';
 
 	ipagerate=0;
-	p = strstr(pagingstr, "Page Rate=") + 10; 
+	p = strstr(pagingstr, "Page Rate="); if (p) p += 10;
 	if (p) {
         	if (sscanf(p, "%f", &fpagerate) == 1) {
 			ipagerate=fpagerate + 0.5;   /*  Rounding up */
-                	sprintf(pagingresult, "z/VSE Paging Rate %d per second\n", ipagerate);
+			snprintf(pagingresult, sizeof(pagingresult), "z/VSE Paging Rate %d per second\n", ipagerate);
                 	}
 		}
 	else
-		sprintf(pagingresult, "Can not find page rate value in:\n%s\n", pagingstr);
+		snprintf(pagingresult, sizeof(pagingresult), "Can not find page rate value in:\n%s\n", pagingstr);
 
         get_paging_thresholds(hinfo, clientclass, &pagingyellow, &pagingred);
 
@@ -146,7 +148,7 @@ static void zvse_paging_report(char *hostname, char *clientclass, enum ostype_t 
         }
 
         init_status(pagingcolor);
-        sprintf(msgline, "status %s.paging %s %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.paging %s %s %s %s\n",
                 commafy(hostname), colorname(pagingcolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 pagingresult, pagingstr);
@@ -203,13 +205,18 @@ static void zvse_cics_report(char *hostname, char *clientclass, enum ostype_t os
         if (cicsstr) {
                 cicsentry=strtok(cicsstr, "\n");
                 while (cicsentry != NULL) {
-                        sscanf(cicsentry, "%8s %10s %8s %d %f %f", cicsappl, cicsdate, cicstime, &numtrans, &dsapct, &edsapct);
-                        sprintf(cicsresult,"%-8s %6d       %3.1f        %3.1f\n", cicsappl, numtrans, dsapct, edsapct);
+                        *cicsappl = '\0'; numtrans = 0; dsapct = edsapct = 0.0;
+                        if (sscanf(cicsentry, "%8s %10s %8s %d %f %f", cicsappl, cicsdate, cicstime, &numtrans, &dsapct, &edsapct) < 1) {
+                                /* A line with no word: no system to report */
+                                cicsentry = strtok(NULL, "\n");
+                                continue;
+                        }
+                        snprintf(cicsresult, sizeof(cicsresult), "%-8s %6d       %3.1f        %3.1f\n", cicsappl, numtrans, dsapct, edsapct);
                         addtobuffer(cicsmsg, cicsresult);
                         if (numtrans == -1 ) {
                                 if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
                                 cicsok=0;
-                                sprintf(tempresult,"&yellow CICS system %s not responding, removed\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&yellow CICS system %s not responding, removed\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                                 }
 
@@ -220,35 +227,34 @@ static void zvse_cics_report(char *hostname, char *clientclass, enum ostype_t os
                         if (dsapct > dsared) {
                                 if (cicscolor < COL_RED) cicscolor = COL_RED;
                                 cicsok=0;
-                                sprintf(tempresult,"&red %s DSA Utilization is CRITICAL\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&red %s DSA Utilization is CRITICAL\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                         }
                         else if (dsapct > dsayel) {
                                 if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
                                 cicsok=0;
-                                sprintf(tempresult,"&yellow %s DSA Utilization is HIGH\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&yellow %s DSA Utilization is HIGH\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                         }
 
                         if (edsapct > edsared) {
                                 if (cicscolor < COL_RED) cicscolor = COL_RED;
                                 cicsok=0;
-                                sprintf(tempresult,"&red %s EDSA Utilization is CRITICAL\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&red %s EDSA Utilization is CRITICAL\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                         }
                         else if (edsapct > edsayel) {
                                 if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
                                 cicsok=0;
-                                sprintf(tempresult,"&yellow %s EDSA Utilization is HIGH\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&yellow %s EDSA Utilization is HIGH\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                         }
-
-                        init_status(cicscolor);
                         cicsentry=strtok(NULL, "\n");
                         }
                 }
 
-        sprintf(msgline, "status %s.cics %s %s %s\n",
+        init_status(cicscolor);
+        snprintf(msgline, sizeof(msgline), "status %s.cics %s %s %s\n",
                 commafy(hostname), colorname(cicscolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 ( (cicsok==1) ? cicsokmsg : cicsnotokmsg) );
@@ -294,7 +300,7 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
         clearalertgroups();
         monmsg = newstrbuffer(0);
 
-        sprintf(msgline, "data %s.proccounts\n", commafy(hostname));
+        snprintf(msgline, sizeof(msgline), "data %s.proccounts\n", commafy(hostname));
         addtobuffer(countdata, msgline);
 
         cmdofs = 0;   /*  Command offset for z/VSE isn't necessary  */
@@ -303,7 +309,7 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
 
         if (pchecks == 0) {
                 /* Nothing to check */
-                sprintf(msgline, "&%s No process checks defined\n", colorname(noreportcolor));
+                snprintf(msgline, sizeof(msgline), "&%s No process checks defined\n", colorname(noreportcolor));
                 addtobuffer(monmsg, msgline);
                 pscolor = noreportcolor;
         }
@@ -337,21 +343,21 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
                         char limtxt[1024];
 
                         if (pmax == -1) {
-                                if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
-                                else if (pmin == 0) sprintf(limtxt, "none");
+                                if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "%d or more", pmin);
+                                else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "none");
                         }
                         else {
-                                if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
-                                else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
+                                if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "between %d and %d", pmin, pmax);
+                                else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "at most %d", pmax);
                         }
 
                         if (pcolor == COL_GREEN) {
-                                sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
+                                snprintf(msgline, sizeof(msgline), "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
                                 addtobuffer(monmsg, msgline);
                         }
                         else {
                                 if (pcolor > pscolor) pscolor = pcolor;
-                                sprintf(msgline, "&%s %s (found %d, req. %s)\n",
+                                snprintf(msgline, sizeof(msgline), "&%s %s (found %d, req. %s)\n",
                                         colorname(pcolor), pname, pcount, limtxt);
                                 addtobuffer(monmsg, msgline);
                                 addalertgroup(group);
@@ -360,7 +366,7 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
                         if (ptrack) {
                                 /* Save the count data for later DATA message to track process counts */
                                 if (!pid) pid = "default";
-                                sprintf(msgline, "%s:%u\n", pid, pcount);
+                                snprintf(msgline, sizeof(msgline), "%s:%u\n", pid, pcount);
                                 addtobuffer(countdata, msgline);
                                 anycountdata = 1;
                         }
@@ -368,7 +374,7 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
         }
         else {
                 pscolor = COL_YELLOW;
-                sprintf(msgline, "&yellow Expected string not found in ps output header\n");
+                snprintf(msgline, sizeof(msgline), "&yellow Expected string not found in ps output header\n");
                 addtobuffer(monmsg, msgline);
         }
 
@@ -376,10 +382,10 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
         init_status(pscolor);
 
         group = getalertgroups();
-        if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+        if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
         addtostatus(msgline);
 
-        sprintf(msgline, "%s.procs %s %s - Processes %s\n",
+        snprintf(msgline, sizeof(msgline), "%s.procs %s %s - Processes %s\n",
                 commafy(hostname), colorname(pscolor),
                 (timestr ? timestr : "<No timestamp data>"),
                 ((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -406,8 +412,8 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
                 tok = strtok(tmpstr, "\n");
 
                 while (tok) {
-                        sprintf(msgline, "%s\n", tok);
-                        addtostatus(msgline);
+                        addtostatus(tok);
+                        addtostatus("\n");
                         tok = strtok(NULL, "\n");
                 }
 
@@ -428,7 +434,7 @@ static void zvse_memory_report(char *hostname, char *clientclass, enum ostype_t 
 {
         int usedyellow, usedred;  /* Thresholds for total used system memory */
 	int sysmemok=1;
-	long totmem, availmem;
+	long totmem = 0, availmem = 0;
 	float pctavail, pctused;
         char memorystr[1024];
 
@@ -449,10 +455,10 @@ static void zvse_memory_report(char *hostname, char *clientclass, enum ostype_t 
          */
 
         sscanf(memstr, "%ld %ld", &totmem, &availmem);
-	pctavail = ((float)availmem / (float)totmem) * 100;
+	pctavail = (totmem ? ((float)availmem / (float)totmem) * 100 : 100);
 	pctused = 100 - pctavail;
 
-        sprintf(memorystr, "z/VSE VSIZE Utilization %3.1f%%\nMemory Allocated %ldK, Memory Available %ldK\n", pctused, totmem, availmem);
+        snprintf(memorystr, sizeof(memorystr), "z/VSE VSIZE Utilization %3.1f%%\nMemory Allocated %ldK, Memory Available %ldK\n", pctused, totmem, availmem);
         get_zvsevsize_thresholds(hinfo, clientclass, &usedyellow, &usedred);
 
         if (pctused > (float)usedred) {
@@ -467,7 +473,7 @@ static void zvse_memory_report(char *hostname, char *clientclass, enum ostype_t 
         	}
 
         init_status(memorycolor);
-        sprintf(msgline, "status %s.memory %s %s %s\n%s",
+        snprintf(msgline, sizeof(msgline), "status %s.memory %s %s %s\n%s",
                 commafy(hostname), colorname(memorycolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 ( (sysmemok==1) ? memokmsg : memnotokmsg ),
@@ -492,7 +498,7 @@ static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t 
         int gv24yel, gv24red, gvanyyel, gvanyred;  /* Thresholds for getvis  */
         int getvisok=1;
         float used24p, usedanyp;
-        char jinfo[11], pid[4], jobname[9];
+        char jinfo[12], pid[4], jobname[9];
         int size24, used24, free24, sizeany, usedany, freeany;
         char *getvisentry = NULL;
         char tempresult[128];
@@ -528,48 +534,53 @@ static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t 
         getvisentry=strtok(gvstr, "\n");
         getvisentry=strtok(NULL, "\n");    /*  Skip heading line */
         while (getvisentry != NULL) {
-                sscanf(getvisentry, "%s %d %d %d %d", jinfo, &used24, &free24, &usedany, &freeany);
+                used24 = free24 = usedany = freeany = 0;
+                if (sscanf(getvisentry, "%11s %d %d %d %d", jinfo, &used24, &free24, &usedany, &freeany) < 1) {
+                        /* A line with no word: no partition to report */
+                        getvisentry = strtok(NULL, "\n");
+                        continue;
+                }
                 q = strchr(jinfo, '-');              /* Check if jobname passed  */
                 if (q) {
                         strncpy(pid, jinfo, 2);          /*  Copy partition ID  */
 			pid[2] = '\0';                   /*  Terminate right after the 2-char partition ID (not pid[sizeof-1], which would leave pid[2] uninitialized) */
                         q++;                             /*  Increment pointer  */
-			strcpy(jobname,q);		 /*  Copy jobname       */
+			snprintf(jobname, sizeof(jobname), "%s", q);		 /*  Copy jobname       */
                         }
                 else {
-                        strcpy(pid,jinfo);            /* Just copy jinfo into partition ID */
+                        snprintf(pid, sizeof(pid), "%.3s", jinfo);            /* Just copy jinfo into partition ID */
 			strcpy(jobname, "-       ");  /* Jobname placeholder               */
                         }
                 size24  = used24  + free24;
                 sizeany = usedany + freeany;
-                used24p  = ( (float)used24  / (float)size24  ) * 100;
-                usedanyp = ( (float)usedany / (float)sizeany ) * 100;
-                sprintf(getvisresult,"%-3s %-8s   %6d    %6d    %6d     %6d     %6d     %6d    %3.0f      %3.0f\n", pid, jobname, size24, used24, free24, sizeany, usedany, freeany, used24p, usedanyp);
+                used24p  = (size24 ? ( (float)used24  / (float)size24  ) * 100 : 0);
+                usedanyp = (sizeany ? ( (float)usedany / (float)sizeany ) * 100 : 0);
+                snprintf(getvisresult, sizeof(getvisresult), "%-3s %-8s   %6d    %6d    %6d     %6d     %6d     %6d    %3.0f      %3.0f\n", pid, jobname, size24, used24, free24, sizeany, usedany, freeany, used24p, usedanyp);
                 get_zvsegetvis_thresholds(hinfo, clientclass, pid, &gv24yel, &gv24red, &gvanyyel, &gvanyred);
 
                 if (used24p > (float)gv24red) {
                         memorycolor = COL_RED;
                         getvisok=0;
-                        sprintf(tempresult,"&red 24-bit Getvis utilization for %s is CRITICAL\n", pid);
+                        snprintf(tempresult, sizeof(tempresult), "&red 24-bit Getvis utilization for %s is CRITICAL\n", pid);
                         addtobuffer(upmsg, tempresult);
                         }
                 else if (used24p > (float)gv24yel) {
                         memorycolor = COL_YELLOW;
                         getvisok=0;
-                        sprintf(tempresult,"&yellow 24-bit Getvis utilization for %s is HIGH\n", pid);
+                        snprintf(tempresult, sizeof(tempresult), "&yellow 24-bit Getvis utilization for %s is HIGH\n", pid);
                         addtobuffer(upmsg, tempresult);
                         }
 
                 if (usedanyp > (float)gvanyred) {
                         memorycolor = COL_RED;
                         getvisok=0;
-                        sprintf(tempresult,"&red Any Getvis utilization for %s is CRITICAL\n", pid);
+                        snprintf(tempresult, sizeof(tempresult), "&red Any Getvis utilization for %s is CRITICAL\n", pid);
                         addtobuffer(upmsg, tempresult);
                         }
                 else if (usedanyp > (float)gvanyyel) {
                         memorycolor = COL_YELLOW;
                         getvisok=0;
-                        sprintf(tempresult,"&yellow Any Getvis utilization for %s is HIGH\n", pid);
+                        snprintf(tempresult, sizeof(tempresult), "&yellow Any Getvis utilization for %s is HIGH\n", pid);
                         addtobuffer(upmsg, tempresult);
                         }
 
@@ -578,7 +589,7 @@ static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t 
                 }
 
         init_status(memorycolor);
-        sprintf(msgline, "status %s.getvis %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.getvis %s %s %s\n",
                 commafy(hostname), colorname(memorycolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 ( (getvisok==1) ? getvisokmsg : getvisnotokmsg ) );
@@ -607,7 +618,7 @@ void zvse_nparts_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr, char *npartstr)
 {
 	char npdispstr[256];
-        long nparts, runparts, partsavail;
+        long nparts = 0, runparts = 0, partsavail;
 	int npartsyellow, npartsred;
         float partutil;
 
@@ -630,7 +641,7 @@ void zvse_nparts_report(char *hostname, char *clientclass, enum ostype_t os,
          */
 
         partsavail = nparts - runparts;
-        partutil  = ((float)runparts / (float)nparts) * 100;
+        partutil  = (nparts ? ((float)runparts / (float)nparts) * 100 : 0);
 
         get_asid_thresholds(hinfo, clientclass, &npartsyellow, &npartsred);
 
@@ -646,10 +657,10 @@ void zvse_nparts_report(char *hostname, char *clientclass, enum ostype_t os,
                 }
 
         *npdispstr = '\0';
-        sprintf(npdispstr, "Nparts: %8ld  Free: %8ld  Used: %8ld  %3.1f\n",nparts,partsavail,runparts,partutil);
+        snprintf(npdispstr, sizeof(npdispstr), "Nparts: %8ld  Free: %8ld  Used: %8ld  %3.1f\n",nparts,partsavail,runparts,partutil);
 
         init_status(npartcolor);
-        sprintf(msgline, "status %s.nparts %s %s\n%s",
+        snprintf(msgline, sizeof(msgline), "status %s.nparts %s %s\n%s",
                 commafy(hostname), colorname(npartcolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 npdispstr);
@@ -683,7 +694,7 @@ void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	char fromline[1024];
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	splitmsg(clientdata);
 

@@ -19,7 +19,7 @@ void zos_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
                      char *cpuutilstr, char *uptimestr)
 {
         char *p;
-        float load1, loadyellow, loadred;
+        float load1 = 0.0, loadyellow, loadred;
         int recentlimit, ancientlimit, uptimecolor, maxclockdiff, clockdiffcolor;
         int  uphour, upmin;
         char loadresult[100];
@@ -43,20 +43,22 @@ void zos_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
          * z/OS: "Uptime: 1 Days, 13 Hours, 38 Minutes"
          */
 
-        sscanf(uptimestr,"Uptime: %ld Days, %d Hours, %d Minutes", &upday, &uphour, &upmin);
-        uptimesecs = upday * 86400;
-        uptimesecs += 60*(60*uphour + upmin);
-        sprintf(myupstr, "%s\n", uptimestr);
+        if (sscanf(uptimestr,"Uptime: %ld Days, %d Hours, %d Minutes", &upday, &uphour, &upmin) == 3) {
+                uptimesecs = upday * 86400;
+                uptimesecs += 60*(60*uphour + upmin);
+        }
+        else uptimesecs = -1;
+        snprintf(myupstr, sizeof(myupstr), "%s\n", uptimestr);
 
         /*
          *  Looking for average CPU Utilization in CPU message
          *  CPU Utilization=000%
          */
         *loadresult = '\0';
-        p = strstr(cpuutilstr, "CPU Utilization ") + 16 ;
+        p = strstr(cpuutilstr, "CPU Utilization "); if (p) p += 16;
         if (p) {
                 if (sscanf(p, "%f%%", &load1) == 1) {
-                        sprintf(loadresult, "z/OS CPU Utilization %3.0f%%\n", load1);
+                        snprintf(loadresult, sizeof(loadresult), "z/OS CPU Utilization %3.0f%%\n", load1);
                 }
         }
 
@@ -75,17 +77,17 @@ void zos_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
         if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
                 if (cpucolor != COL_RED) cpucolor = uptimecolor;
-                sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+                snprintf(msgline, sizeof(msgline), "&%s Machine recently rebooted\n", colorname(uptimecolor));
                 addtobuffer(upmsg, msgline);
         }
         if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
                 if (cpucolor != COL_RED) cpucolor = uptimecolor;
-                sprintf(msgline, "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
+                snprintf(msgline, sizeof(msgline), "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
                 addtobuffer(upmsg, msgline);
         }
 
         init_status(cpucolor);
-        sprintf(msgline, "status %s.cpu %s %s %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.cpu %s %s %s %s %s\n",
                 commafy(hostname), colorname(cpucolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 loadresult,
@@ -123,15 +125,15 @@ void zos_paging_report(char *hostname, char *clientclass, enum ostype_t os,
         *pagingresult = '\0';
 
 	ipagerate=0;
-	p = strstr(pagingstr, "Paging Rate ") + 12; 
+	p = strstr(pagingstr, "Paging Rate "); if (p) p += 12;
 	if (p) {
         	if (sscanf(p, "%f", &fpagerate) == 1) {
 			ipagerate=fpagerate + 0.5;   /*  Rounding up */
-                	sprintf(pagingresult, "z/OS Paging Rate %d per second\n", ipagerate);
+			snprintf(pagingresult, sizeof(pagingresult), "z/OS Paging Rate %d per second\n", ipagerate);
                 	}
 		}
 	else
-		sprintf(pagingresult, "Can not find page rate value in:\n%s\n", pagingstr);
+		snprintf(pagingresult, sizeof(pagingresult), "Can not find page rate value in:\n%s\n", pagingstr);
 
         get_paging_thresholds(hinfo, clientclass, &pagingyellow, &pagingred);
 
@@ -147,7 +149,7 @@ void zos_paging_report(char *hostname, char *clientclass, enum ostype_t os,
         }
 
         init_status(pagingcolor);
-        sprintf(msgline, "status %s.paging %s %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.paging %s %s %s %s\n",
                 commafy(hostname), colorname(pagingcolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 pagingresult, pagingstr);
@@ -168,8 +170,8 @@ void zos_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 {
         char *p;
         char headstr[100], csastr[100], ecsastr[100], sqastr[100], esqastr[100];
-	long csaalloc, csaused, csahwm, ecsaalloc, ecsaused, ecsahwm;
-	long sqaalloc, sqaused, sqahwm, esqaalloc, esqaused, esqahwm;
+	long csaalloc = 0, csaused = 0, csahwm = 0, ecsaalloc = 0, ecsaused = 0, ecsahwm = 0;
+	long sqaalloc = 0, sqaused = 0, sqahwm = 0, esqaalloc = 0, esqaused = 0, esqahwm = 0;
         float csautil, ecsautil, sqautil, esqautil;
 	int csayellow, csared, ecsayellow, ecsared, sqayellow, sqared, esqayellow, esqared;
 
@@ -182,30 +184,30 @@ void zos_memory_report(char *hostname, char *clientclass, enum ostype_t os,
          *  Looking for memory eyecatchers in message
          */
 
-        p = strstr(memstr, "CSA ") + 4;
+        p = strstr(memstr, "CSA "); if (p) p += 4;
         if (p) {
                 sscanf(p, "%ld %ld %ld", &csaalloc, &csaused, &csahwm);
                 }
 
-        p = strstr(memstr, "ECSA ") + 5;
+        p = strstr(memstr, "ECSA "); if (p) p += 5;
         if (p) {
                 sscanf(p, "%ld %ld %ld", &ecsaalloc, &ecsaused, &ecsahwm);
                 }
 
-        p = strstr(memstr, "SQA ") + 4;
+        p = strstr(memstr, "SQA "); if (p) p += 4;
         if (p) {
                 sscanf(p, "%ld %ld %ld", &sqaalloc, &sqaused, &sqahwm);
                 }
 
-        p = strstr(memstr, "ESQA ") + 5;
+        p = strstr(memstr, "ESQA "); if (p) p += 5;
         if (p) {
                 sscanf(p, "%ld %ld %ld", &esqaalloc, &esqaused, &esqahwm);
                 }
 
-        csautil = ((float)csaused / (float)csaalloc) * 100; 
-        ecsautil = ((float)ecsaused / (float)ecsaalloc) * 100; 
-        sqautil = ((float)sqaused / (float)sqaalloc) * 100; 
-        esqautil = ((float)esqaused / (float)esqaalloc) * 100;
+        csautil = (csaalloc ? ((float)csaused / (float)csaalloc) * 100 : 0);
+        ecsautil = (ecsaalloc ? ((float)ecsaused / (float)ecsaalloc) * 100 : 0);
+        sqautil = (sqaalloc ? ((float)sqaused / (float)sqaalloc) * 100 : 0);
+        esqautil = (esqaalloc ? ((float)esqaused / (float)esqaalloc) * 100 : 0);
 	
 	get_zos_memory_thresholds(hinfo, clientclass, &csayellow, &csared, &ecsayellow, &ecsared, &sqayellow, &sqared, &esqayellow, &esqared);
 
@@ -250,13 +252,13 @@ void zos_memory_report(char *hostname, char *clientclass, enum ostype_t os,
         *sqastr = '\0';
         *esqastr = '\0';
 	strcpy(headstr, "z/OS Memory Map\n Area    Alloc     Used      HWM  Util%\n");
-	sprintf(csastr, "CSA  %8ld %8ld %8ld   %3.1f\n", csaalloc, csaused, csahwm, csautil);
-	sprintf(ecsastr, "ECSA %8ld %8ld %8ld   %3.1f\n", ecsaalloc, ecsaused, ecsahwm, ecsautil);
-	sprintf(sqastr, "SQA  %8ld %8ld %8ld   %3.1f\n", sqaalloc, sqaused, sqahwm, sqautil);
-	sprintf(esqastr, "ESQA %8ld %8ld %8ld   %3.1f\n", esqaalloc, esqaused, esqahwm, esqautil);
+	snprintf(csastr, sizeof(csastr), "CSA  %8ld %8ld %8ld   %3.1f\n", csaalloc, csaused, csahwm, csautil);
+	snprintf(ecsastr, sizeof(ecsastr), "ECSA %8ld %8ld %8ld   %3.1f\n", ecsaalloc, ecsaused, ecsahwm, ecsautil);
+	snprintf(sqastr, sizeof(sqastr), "SQA  %8ld %8ld %8ld   %3.1f\n", sqaalloc, sqaused, sqahwm, sqautil);
+	snprintf(esqastr, sizeof(esqastr), "ESQA %8ld %8ld %8ld   %3.1f\n", esqaalloc, esqaused, esqahwm, esqautil);
 
         init_status(memcolor);
-        sprintf(msgline, "status %s.memory %s %s\n%s %s %s %s %s",
+        snprintf(msgline, sizeof(msgline), "status %s.memory %s %s\n%s %s %s %s %s",
                 commafy(hostname), colorname(memcolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 headstr, csastr, ecsastr, sqastr, esqastr);
@@ -313,13 +315,18 @@ static void zos_cics_report(char *hostname, char *clientclass, enum ostype_t os,
         if (cicsstr) {
                 cicsentry=strtok(cicsstr, "\n");
                 while (cicsentry != NULL) {
-                        sscanf(cicsentry, "%8s %10s %8s %d %f %f", cicsappl, cicsdate, cicstime, &numtrans, &dsapct, &edsapct);
-                        sprintf(cicsresult,"%-8s %6d       %3.1f        %3.1f\n", cicsappl, numtrans, dsapct, edsapct);
+                        *cicsappl = '\0'; numtrans = 0; dsapct = edsapct = 0.0;
+                        if (sscanf(cicsentry, "%8s %10s %8s %d %f %f", cicsappl, cicsdate, cicstime, &numtrans, &dsapct, &edsapct) < 1) {
+                                /* A line with no word: no system to report */
+                                cicsentry = strtok(NULL, "\n");
+                                continue;
+                        }
+                        snprintf(cicsresult, sizeof(cicsresult), "%-8s %6d       %3.1f        %3.1f\n", cicsappl, numtrans, dsapct, edsapct);
                         addtobuffer(cicsmsg, cicsresult);
                         if (numtrans == -1 ) {
                                 if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
                                 cicsok=0;
-                                sprintf(tempresult,"&yellow CICS system %s not responding, removed\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&yellow CICS system %s not responding, removed\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                                 }
 
@@ -330,35 +337,34 @@ static void zos_cics_report(char *hostname, char *clientclass, enum ostype_t os,
                         if (dsapct > dsared) {
                                 if (cicscolor < COL_RED) cicscolor = COL_RED;
                                 cicsok=0;
-                                sprintf(tempresult,"&red %s DSA Utilization is CRITICAL\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&red %s DSA Utilization is CRITICAL\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                         }
                         else if (dsapct > dsayel) {
                                 if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
                                 cicsok=0;
-                                sprintf(tempresult,"&yellow %s DSA Utilization is HIGH\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&yellow %s DSA Utilization is HIGH\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                         }
 
                         if (edsapct > edsared) {
                                 if (cicscolor < COL_RED) cicscolor = COL_RED;
                                 cicsok=0;
-                                sprintf(tempresult,"&red %s EDSA Utilization is CRITICAL\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&red %s EDSA Utilization is CRITICAL\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                         }
                         else if (edsapct > edsayel) {
                                 if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
                                 cicsok=0;
-                                sprintf(tempresult,"&yellow %s EDSA Utilization is HIGH\n", cicsappl);
+                                snprintf(tempresult, sizeof(tempresult), "&yellow %s EDSA Utilization is HIGH\n", cicsappl);
                                 addtobuffer(upmsg, tempresult);
                         }
-
-                        init_status(cicscolor);
                         cicsentry=strtok(NULL, "\n");
                         }
                 }
 
-        sprintf(msgline, "status %s.cics %s %s %s\n",
+        init_status(cicscolor);
+        snprintf(msgline, sizeof(msgline), "status %s.cics %s %s %s\n",
                 commafy(hostname), colorname(cicscolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 ( (cicsok==1) ? cicsokmsg : cicsnotokmsg) );
@@ -404,7 +410,7 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
         clearalertgroups();
         monmsg = newstrbuffer(0);
 
-        sprintf(msgline, "data %s.proccounts\n", commafy(hostname));
+        snprintf(msgline, sizeof(msgline), "data %s.proccounts\n", commafy(hostname));
         addtobuffer(countdata, msgline);
 
         cmdofs = 0;   /*  Command offset for z/OS isn't necessary  */
@@ -413,7 +419,7 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
 
         if (pchecks == 0) {
                 /* Nothing to check */
-                sprintf(msgline, "&%s No process checks defined\n", colorname(noreportcolor));
+                snprintf(msgline, sizeof(msgline), "&%s No process checks defined\n", colorname(noreportcolor));
                 addtobuffer(monmsg, msgline);
                 pscolor = noreportcolor;
         }
@@ -447,21 +453,21 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
                         char limtxt[1024];
 
                         if (pmax == -1) {
-                                if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
-                                else if (pmin == 0) sprintf(limtxt, "none");
+                                if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "%d or more", pmin);
+                                else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "none");
                         }
                         else {
-                                if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
-                                else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
+                                if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "between %d and %d", pmin, pmax);
+                                else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "at most %d", pmax);
                         }
 
                         if (pcolor == COL_GREEN) {
-                                sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
+                                snprintf(msgline, sizeof(msgline), "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
                                 addtobuffer(monmsg, msgline);
                         }
                         else {
                                 if (pcolor > pscolor) pscolor = pcolor;
-                                sprintf(msgline, "&%s %s (found %d, req. %s)\n",
+                                snprintf(msgline, sizeof(msgline), "&%s %s (found %d, req. %s)\n",
                                         colorname(pcolor), pname, pcount, limtxt);
                                 addtobuffer(monmsg, msgline);
                                 addalertgroup(group);
@@ -470,7 +476,7 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
                         if (ptrack) {
                                 /* Save the count data for later DATA message to track process counts */
                                 if (!pid) pid = "default";
-                                sprintf(msgline, "%s:%u\n", pid, pcount);
+                                snprintf(msgline, sizeof(msgline), "%s:%u\n", pid, pcount);
                                 addtobuffer(countdata, msgline);
                                 anycountdata = 1;
                         }
@@ -478,7 +484,7 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
         }
         else {
                 pscolor = COL_YELLOW;
-                sprintf(msgline, "&yellow Expected string not found in ps output header\n");
+                snprintf(msgline, sizeof(msgline), "&yellow Expected string not found in ps output header\n");
                 addtobuffer(monmsg, msgline);
         }
 
@@ -486,10 +492,10 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
         init_status(pscolor);
 
         group = getalertgroups();
-        if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+        if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
         addtostatus(msgline);
 
-        sprintf(msgline, "%s.procs %s %s - Processes %s\n",
+        snprintf(msgline, sizeof(msgline), "%s.procs %s %s - Processes %s\n",
                 commafy(hostname), colorname(pscolor),
                 (timestr ? timestr : "<No timestamp data>"),
                 ((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -516,8 +522,8 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
                 tok = strtok(tmpstr, "\n");
 
                 while (tok) {
-                        sprintf(msgline, "%s\n", tok);
-                        addtostatus(msgline);
+                        addtostatus(tok);
+                        addtostatus("\n");
                         tok = strtok(NULL, "\n");
                 }
 
@@ -538,7 +544,7 @@ void zos_maxuser_report(char *hostname, char *clientclass, enum ostype_t os,
 {
         char *p;
         char maxustr[256];
-	long maxusers, maxufree, maxuused, rsvtstrt, rsvtfree, rsvtused, rsvnonr, rsvnfree, rsvnused;
+	long maxusers = 0, maxufree = 0, maxuused, rsvtstrt = 0, rsvtfree = 0, rsvtused, rsvnonr = 0, rsvnfree = 0, rsvnused;
 	int maxyellow, maxred;
 	float maxutil, rsvtutil, rsvnutil;
 
@@ -551,17 +557,17 @@ void zos_maxuser_report(char *hostname, char *clientclass, enum ostype_t os,
          *  Looking for eyecatchers in message
          */
 
-        p = strstr(maxuserstr, "Maxusers: ") + 9;
+        p = strstr(maxuserstr, "Maxusers: "); if (p) p += 9;
         if (p) {
                 sscanf(p, "%ld Free: %ld", &maxusers, &maxufree);
                 }
 
-        p = strstr(maxuserstr, "RSVTSTRT: ") + 9;
+        p = strstr(maxuserstr, "RSVTSTRT: "); if (p) p += 9;
         if (p) {
                 sscanf(p, "%ld Free: %ld", &rsvtstrt, &rsvtfree);
                 }
 
-        p = strstr(maxuserstr, "RSVNONR: ") + 8;
+        p = strstr(maxuserstr, "RSVNONR: "); if (p) p += 8;
         if (p) {
                 sscanf(p, "%ld Free: %ld", &rsvnonr, &rsvnfree);
                 }
@@ -570,17 +576,17 @@ void zos_maxuser_report(char *hostname, char *clientclass, enum ostype_t os,
 	rsvtused = rsvtstrt - rsvtfree;
 	rsvnused = rsvnonr  - rsvnfree;
 
-	if ( maxuused == 0.0 )
+	if ( (maxuused == 0) || (maxusers == 0) )
 		maxutil = 0;
 	else
         	maxutil  = ((float)maxuused / (float)maxusers) * 100;
 
-	if ( rsvtused == 0.0 )
+	if ( (rsvtused == 0) || (rsvtstrt == 0) )
 		rsvtutil = 0;
 	else
         	rsvtutil = ((float)rsvtused / (float)rsvtstrt) * 100;
 
-	if ( rsvnused == 0.0 )
+	if ( (rsvnused == 0) || (rsvnonr == 0) )
 		rsvnutil = 0;
 	else
         	rsvnutil = ((float)rsvnused / (float)rsvnonr)  * 100;
@@ -599,10 +605,10 @@ void zos_maxuser_report(char *hostname, char *clientclass, enum ostype_t os,
                 }
 
         *maxustr = '\0';
-        sprintf(maxustr, " Maxuser: %8ld  Free: %8ld  Used: %8ld  %3.1f\nRSVTSTRT: %8ld  Free: %8ld  Used: %8ld  %3.1f\n RSVNONR: %8ld  Free: %8ld  Used: %8ld  %3.1f\n",maxusers,maxufree,maxuused,maxutil,rsvtstrt,rsvtfree,rsvtused,rsvtutil,rsvnonr,rsvnfree,rsvnused,rsvnutil);
+        snprintf(maxustr, sizeof(maxustr), " Maxuser: %8ld  Free: %8ld  Used: %8ld  %3.1f\nRSVTSTRT: %8ld  Free: %8ld  Used: %8ld  %3.1f\n RSVNONR: %8ld  Free: %8ld  Used: %8ld  %3.1f\n",maxusers,maxufree,maxuused,maxutil,rsvtstrt,rsvtfree,rsvtused,rsvtutil,rsvnonr,rsvnfree,rsvnused,rsvnutil);
 
         init_status(maxcolor);
-        sprintf(msgline, "status %s.maxuser %s %s\n%s",
+        snprintf(msgline, sizeof(msgline), "status %s.maxuser %s %s\n%s",
                 commafy(hostname), colorname(maxcolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 maxustr);
@@ -636,7 +642,7 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	char fromline[1024];
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	splitmsg(clientdata);
 
