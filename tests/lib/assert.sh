@@ -331,6 +331,19 @@ require_gnu_make() {
 	skip "GNU make not found (the tree's Makefiles are GNU make -- install gmake)"
 }
 
+# configure_make -- call before a test runs configure, configure.server or
+# configure.client. They stop first of all unless $MAKE, or make(1) when it
+# is unset, is GNU make: before any probe a test is about, so a host without
+# it would fail the test for the wrong reason (#1043), and on the BSDs, where
+# make(1) is BSD make, the test would never reach its probe though gmake is
+# there. This exports MAKE as the GNU make require_gnu_make finds, and skips
+# when there is none.
+configure_make() {
+	require_gnu_make
+	MAKE=$XYMON_MAKE
+	export MAKE
+}
+
 # require_c_buildenv ROOT -- skip unless a C compiler, GNU make, and a
 # configured tree (include/config.h) are present. The shared baseline for every
 # test that compiles a harness against the in-tree libraries, so a new shared

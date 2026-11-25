@@ -37,6 +37,7 @@ chmod +x "$work/bin/ypmatch"
 
 nosuch="xymon-test-nosuchuser-$$"
 getent passwd "$nosuch" >/dev/null 2>&1 && skip "user $nosuch exists here"
+configure_make
 
 missing=""
 for kind in server client; do

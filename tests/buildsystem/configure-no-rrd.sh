@@ -77,21 +77,7 @@ cd "$SRC"
 # the RRD probe regardless of host fping state.
 export USEXYMONPING=y
 
-# configure.server bails when its make-utility is not GNU make, which on the
-# BSDs it never is: make(1) is BSD make there and GNU make is gmake. The run
-# then aborts before the RRD probe and this test skips for a dependency the
-# host has. Hand it the MAKE= configure.server prints when it bails, detected
-# the way configure.server detects it so the two cannot drift.
-make_is_gnu() {
-	local version
-	version=$(first_line "$("$1" -version 2>&1 || true)")
-	[ "$(awk '{print $1 " " $2}' <<<"$version")" = "GNU Make" ]
-}
-if [ -z "${MAKE:-}" ] && ! make_is_gnu make; then
-	if command -v gmake >/dev/null 2>&1 && make_is_gnu gmake; then
-		export MAKE=gmake
-	fi
-fi
+configure_make
 
 LOG="$TMP/configure.log"
 set +e
@@ -116,17 +102,14 @@ fi
 # satisfied even if pre-#84 silent-continue behavior were reintroduced.
 # Pin the failure to the RRD abort code path in configure.server.
 if ! grep -q "RRDtool probe failed" "$LOG"; then
-	# configure.server checks a few prerequisites *before* it reaches the
-	# RRD stub: GNU make (it bails with "GNU make is required ...") and a
-	# usable PCRE (build/pcre.sh exits with "Missing PCRE include- or
-	# library-files ..."). If one of those is absent on this host the run
+	# configure.server checks a usable PCRE *before* it reaches the RRD
+	# stub (build/pcre.sh exits with "Missing PCRE include- or
+	# library-files ..."; GNU make, checked earlier still, configure_make
+	# above has settled). If PCRE is absent on this host the run
 	# aborts early and never exercises the RRD path -- that's a missing
 	# precondition, not a #84 regression, so skip rather than false-fail.
 	# (Matches the tarball/autopkgtest portability goal: declare the host
 	# dependency and skip when it's not met.)
-	if grep -q "GNU make is required" "$LOG"; then
-		skip "GNU make unavailable -- configure aborts before the RRD probe"
-	fi
 	if grep -q "Missing PCRE include- or library-files" "$LOG"; then
 		skip "usable PCRE unavailable -- configure aborts before the RRD probe"
 	fi

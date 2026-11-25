@@ -45,16 +45,7 @@ ares-clean:
 EOF
 
 cd "$SRC"
-make_is_gnu() {
-	local version
-	version=$(first_line "$("$1" -version 2>&1 || true)")
-	[ "$(awk '{print $1 " " $2}' <<<"$version")" = "GNU Make" ]
-}
-if [ -z "${MAKE:-}" ] && ! make_is_gnu make; then
-	if command -v gmake >/dev/null 2>&1 && make_is_gnu gmake; then
-		export MAKE=gmake
-	fi
-fi
+configure_make
 
 LOG="$TMP/configure.log"
 rc=0

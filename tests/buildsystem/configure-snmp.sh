@@ -54,16 +54,7 @@ esac
 EOF
 chmod +x "$TMP/fakebin/net-snmp-config"
 
-make_is_gnu() {
-	local version
-	version=$(first_line "$("$1" -version 2>&1 || true)")
-	[ "$(awk '{print $1 " " $2}' <<<"$version")" = "GNU Make" ]
-}
-if [ -z "${MAKE:-}" ] && ! make_is_gnu make; then
-	if command -v gmake >/dev/null 2>&1 && make_is_gnu gmake; then
-		export MAKE=gmake
-	fi
-fi
+configure_make
 
 # run_configure BINDIR [VAR=value | --option | VALUE ...] -- configures afresh, with
 # BINDIR first on PATH, and leaves the Makefile's SNMP lines in $GOT. ENABLESNMP
