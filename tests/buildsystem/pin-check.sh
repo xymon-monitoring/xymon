@@ -186,23 +186,39 @@ printf 'clash\n' >"$repo/src/value"; g add -A; g commit -q -m clash
 g checkout -q -b moved main
 printf 'moved\n' >"$repo/src/value"; g add -A; g commit -q -m moved
 g checkout -q main
+# Each as a pull request is fetched: refs/remotes/pr/N.
+n=0
+for b in m1 m2 clash moved; do
+	n=$((n + 1))
+	g update-ref "refs/remotes/pr/$n" "$b"
+done
 mkdir -p "$work/nohome"
 noid() { ( cd "$repo" && HOME=$work/nohome XDG_CONFIG_HOME=$work/nohome \
 	GIT_CONFIG_NOSYSTEM=1 sh build/pin-check.sh "$@" 2>&1 ); }
 
-got=$(noid --integrate main m1 m2 | tr '\n' ' ')
-assert_equal "m1 m2 " "$got" \
+got=$(noid --integrate main 1 2 | tr '\n' ' ') || true
+assert_equal "1 2 " "$got" \
 	"the integration merges succeed with no git identity configured"
 
-out=$(noid --integrate moved clash) && fail "a set of which nothing merges did not stop the run"
+out=$(noid --integrate moved 3) && fail "a set of which nothing merges did not stop the run"
 assert_contains "none of the 1 pull requests merges onto moved" "$out" \
 	"a set of which nothing merges stops the run"
 # What git said, in whatever language it speaks here (#628): the pull
 # request pin-check names, and the file git names, which no translation
 # changes -- not the word "CONFLICT", which a German git writes "KONFLIKT".
-assert_contains "clash: " "$out" \
+assert_contains "3: " "$out" \
 	"the stop names the pull request whose merge was refused"
 assert_contains "src/value" "$out" \
 	"the stop quotes what git said about the first refusal"
 
-pass "pinned, unguarded, adapted and control told apart; dependencies read and applied; integration merges need no identity"
+# A ref of the same short name left in the clone, refs/pr/1, an old snapshot
+# of another commit: git resolves "pr/1" to it before refs/remotes/pr/1. The
+# integration must merge the fetched head, which merges onto moved, and not
+# the snapshot, which does not.
+g update-ref refs/pr/1 clash
+got=$(noid --integrate moved 1 | tr '\n' ' ') || true
+assert_equal "1 " "$got" \
+	"a stale refs/pr/1 took the place of the fetched pull request in the integration"
+g update-ref -d refs/pr/1
+
+pass "pinned, unguarded, adapted and control told apart; dependencies read and applied; integration merges need no identity, and merge the fetched heads whatever else the clone holds"
