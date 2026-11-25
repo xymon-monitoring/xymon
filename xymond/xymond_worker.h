@@ -21,5 +21,13 @@ extern void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t
 extern void set_xymond_message_growlimit(size_t maxbytes);
 extern unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, struct timespec *timeout);
 
+/*
+ * Refuse a path component xymond did not validate before it becomes a path:
+ * "", a leading '.', and a '/' or '\\' separator, each logged under dir. A raw
+ * testname "../.." once reached the recursive dropdirectory() and climbed out
+ * of its directory (#287); real host and test names pass unchanged.
+ */
+extern int name_confined(char *dir, char *component);
+
 #endif
 
