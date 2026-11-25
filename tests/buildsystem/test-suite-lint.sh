@@ -62,7 +62,7 @@ report() {
 		# the rule could only be satisfied by deleting the definition.
 		case $rule in
 		  runner-only-helper) [ "$f" = "$ROOT/tests/testsuite" ] && continue ;;
-		  make-tree-*) [ "$f" = "$ROOT/tests/lib/assert.sh" ] && continue ;;
+		  make-tree-*|tree-find) [ "$f" = "$ROOT/tests/lib/assert.sh" ] && continue ;;
 		esac
 		# install-static-wwwdir tests the make build's own install, and the
 		# INSTALLSTATICWWWDIR it checks is computed by build/Makefile.rules,
@@ -128,6 +128,14 @@ report "gnu-only" 'sed +-i|grep +[^|]*--include|grep +-[a-zA-Z]*P|stat +-c|readl
 # a test needs.
 report "cp-preserve" '(^|[^[:alnum:]_])cp +-[[:alnum:]]*[pa]' \
 	"cp -p/-a fails copying from ZFS to tmpfs (Solaris); a plain cp keeps the mode bits"
+
+# A test that walks the source tree goes through tree_find (tests/lib/assert.sh),
+# which leaves out .git and quilt's .pc. A Debian package build applies its
+# patches with quilt, and .pc then holds the original of every patched file: a
+# find of its own read each one twice, the second time as it was before the
+# patch, and strncat-bounds counted the backups as new files (#977).
+report "tree-find" '(^|[^[:alnum:]_])find +"?[$][{]?(ROOT|root)[}]?([/"[:space:]]|$)|cd +"?[$][{]?(ROOT|root)[}]?"? *&& *find ' \
+	"walks the source tree with find, which reads quilt's .pc backups too; use tree_find ROOT EXPRESSION"
 
 # GNU-only regex escapes. The BSD greps take \b as a literal b, so a rule
 # written with it silently matches nothing there -- which is how this very
@@ -556,10 +564,11 @@ probe="$work/probe.sh"
 	printf 'out=$("$XYMON_MAKE" -s -C "$ROOT" -f Makefile -f - probe <<EOF)\n'
 	printf 'rrdtool lastupdate x.rrd\n'
 	printf 'exec {fd}>/dev/null\n'
+	printf 'src=$(find "$ROOT" -name x.c)\n'
 } >"$probe"
 probe_pattern=$(IFS='|'; printf '%s' "${__rule_patterns[*]}")
 hits=$(grep -cE "$probe_pattern" "$probe")
-assert_equal "17" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
+assert_equal "18" "$hits" "the rule patterns no longer match the constructs they are meant to catch"
 
 # And not over-eager: the helpers that replace those, and a test that only
 # asks whether the make tree is there, match none of the patterns.
@@ -570,6 +579,7 @@ fine="$work/fine.sh"
 	printf 'cc x.c "$(xymon_lib "$ROOT" libxymon.a)"\n'
 	printf '[ -f "$ROOT/Makefile" ] || skip "tree not configured"\n'
 	printf '"$XYMON_MAKE" -C "$ROOT" install PKGBUILD=1\n'
+	printf 'cfiles=$(tree_find "$ROOT" -type f -name "*.c")\n'
 } >"$fine"
 assert_equal "0" "$(grep -cE "$probe_pattern" "$fine" || true)" \
 	"a rule fires on the helpers that replace what it forbids, or on a test of the make build itself"
