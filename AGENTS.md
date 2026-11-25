@@ -113,6 +113,17 @@ read, not a last check, and a review is not finished while one is unaddressed.
   roughly a hundred untracked paths waiting to be committed by accident. Stage
   the paths you changed.
 
+- **Do not delete a branch whose commits no pull request holds.** GitHub keeps
+  `refs/pull/N/head` for ever, so a branch that had a pull request can be
+  deleted freely -- its commits stay reachable. A branch that never had one has
+  no such ref, and deleting it leaves the work reachable by raw SHA until that
+  is collected. Check before deleting:
+
+      git for-each-ref --contains <branch-tip> refs/pull/
+
+  Nothing listed means the commits go with the branch. Open a pull request
+  first -- closing it immediately is enough, the ref is what matters.
+
 ## What the test suite will not accept
 
 `tests/buildsystem/test-suite-lint.sh` fails the run on the constructs
