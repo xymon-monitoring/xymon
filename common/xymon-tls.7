@@ -135,6 +135,9 @@ Xymon distributes no certificates: it reads the files it is given.
 .IP "The CA certificate" 4
 is public. Copy it to every host that needs it with whatever manages the
 hosts' configuration.
+.IP "A self-signed server certificate" 4
+is its own CA. Copy the certificate, never its key, to the clients and
+name that file in XYMON_TLS_CA.
 .IP "A private key" 4
 is made on the host that uses it and never leaves it. The host makes a
 request, the CA signs it, and only the certificate travels back.
