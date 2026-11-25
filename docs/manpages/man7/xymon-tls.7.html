@@ -177,7 +177,11 @@ Section: Environments, Tables, and Troff Macros (7)<br/>Updated: Version 4.3.30:
   <dt id="The"><a class="permalink" href="#The">The CA certificate</a></dt>
   <dd>is public. Copy it to every host that needs it with whatever manages the
       hosts' configuration.</dd>
-  <dt id="A"><a class="permalink" href="#A">A private key</a></dt>
+  <dt id="A"><a class="permalink" href="#A">A self-signed server
+    certificate</a></dt>
+  <dd>is its own CA. Copy the certificate, never its key, to the clients and
+      name that file in XYMON_TLS_CA.</dd>
+  <dt id="A~2"><a class="permalink" href="#A~2">A private key</a></dt>
   <dd>is made on the host that uses it and never leaves it. The host makes a
       request, the CA signs it, and only the certificate travels back.</dd>
   <dt id="Renewal"><a class="permalink" href="#Renewal">Renewal</a></dt>
