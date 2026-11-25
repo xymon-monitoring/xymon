@@ -43,9 +43,10 @@ for cfg in $configs; do
 		# `| head` -- under `set -o pipefail`, head closing the pipe while find
 		# still walks a large tree raises SIGPIPE (rc=141) on BSD. Capture all
 		# matches, keep the first line.
-		src=$(find "$ROOT" -name "$bin.c" ! -path '*/tests/*')
+		src=$(tree_find "$ROOT" -name "$bin.c" ! -path '*/tests/*')
 		src=${src%%$'\n'*}
 		[ -n "$src" ] || fail "$(basename "$cfg"): [$task] has SENDHUP but no source found for '$bin'"
+		src=$ROOT/$src
 
 		grep -q "XYMONLAUNCH_LOGFILENAME" "$src" \
 			|| fail "$(basename "$cfg"): [$task] has SENDHUP, but $bin does not read \$XYMONLAUNCH_LOGFILENAME, so it cannot know which file to reopen"

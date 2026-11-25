@@ -618,6 +618,23 @@ find_root() {
 	cd "$(dirname "${BASH_SOURCE[1]}")/../.." && pwd
 }
 
+# tree_find ROOT EXPRESSION... -- the paths under ROOT that the find
+# EXPRESSION selects ("-type f -name '*.c'"), relative to ROOT, one per line,
+# sorted.
+#
+# Not the source tree's metadata: .git, and .pc, where quilt keeps the original
+# of every file a patch changes. A Debian package build applies its patches
+# with quilt, and a test walking the tree there read each patched file twice,
+# the second time as it was before the patch: strncat-bounds counted the
+# backups as new files (#977). Every test that walks the tree goes through
+# here; tests/buildsystem/test-suite-lint.sh refuses a find over $ROOT.
+tree_find() {
+	local root=$1
+	shift
+	(cd "$root" && find . \( -path ./.git -o -path ./.pc \) -prune -o \( "$@" \) -print) \
+		| sed 's|^\./||' | LC_ALL=C sort
+}
+
 # copy_source_tree ROOT DEST -- copy the built tree at ROOT, all but .git, to
 # DEST, and print DEST.
 #
