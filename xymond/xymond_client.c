@@ -2184,6 +2184,7 @@ int main(int argc, char *argv[])
 	time_t nextconfigload = 0;
 	char *configfn = NULL;
 	char **collectors = NULL;
+	char *collectorsbuf = NULL;	/* --collectors= list; collectors[] points into it */
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -2220,13 +2221,17 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *lp = strchr(argv[argi], '=');
+			if (configfn) xfree(configfn);
 			configfn = strdup(lp+1);
 		}
 		else if (argnmatch(argv[argi], "--collectors=")) {
-			char *lp = strdup(strchr(argv[argi], '=')+1);
+			char *lp;
 			char *tok;
 			int i;
 
+			if (collectors) xfree(collectors);
+			if (collectorsbuf) xfree(collectorsbuf);
+			lp = collectorsbuf = strdup(strchr(argv[argi], '=')+1);
 			tok = strtok(lp, ","); i = 0; collectors = (char **)calloc(1, sizeof(char *));
 			while (tok) {
 				collectors = (char **)realloc(collectors, (i+2)*sizeof(char *));
@@ -2241,6 +2246,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--dump-config")) {
 			load_client_config(configfn);
 			dump_client_config();
+			if (collectors) xfree(collectors);
+			if (collectorsbuf) xfree(collectorsbuf);
+			if (configfn) xfree(configfn);
 			return 0;
 		}
 		else if (strcmp(argv[argi], "--local") == 0) {
@@ -2444,6 +2452,15 @@ int main(int argc, char *argv[])
 	}
 
 	if (usebackfeedqueue) sendmessage_finish_local();
+
+	/*
+	 * Free what main() allocated for the life of the process. Not needed by
+	 * the system, but a memory checker counts it as lost once main() has
+	 * returned, and that hides any real leak behind these.
+	 */
+	xfree(collectors);
+	if (collectorsbuf) xfree(collectorsbuf);
+	if (configfn) xfree(configfn);
 
 	return 0;
 }
