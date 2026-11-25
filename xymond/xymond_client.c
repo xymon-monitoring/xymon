@@ -397,8 +397,8 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		int hours = (uptimesecs % 86400) / 3600;
 		int mins = (uptimesecs % 3600) / 60;
 
-		if (days) sprintf(myupstr, "up: %d days", days);
-		else sprintf(myupstr, "up: %02d:%02d", hours, mins);
+		if (days) snprintf(myupstr, sizeof(myupstr), "up: %d days", days);
+		else snprintf(myupstr, sizeof(myupstr), "up: %02d:%02d", hours, mins);
 	}
 	else *myupstr = '\0';
 
@@ -410,7 +410,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		p = strchr(p, ':') + 1; p += strspn(p, " ");
 		if ((sscanf(p, "%f, %f, %f", &load1, &load5, &load15) == 3) ||
 		    (sscanf(p, "%f %f %f", &load1, &load5, &load15) == 3)) {
-			sprintf(loadresult, "%.2f", load5);
+			snprintf(loadresult, sizeof(loadresult), "%.2f", load5);
 		}
 	}
 	else {
@@ -422,9 +422,8 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 			p = lstart + strspn(lstart, "0123456789.");
 			savech = *p; *p = '\0';
 			load5 = atof(loadresult);
-			strcpy(loadresult, lstart);
+			snprintf(loadresult, sizeof(loadresult), "%s%s", lstart, (savech == '%') ? "%" : "");
 			*p = savech;
-			if (savech == '%') strcat(loadresult, "%");
 		}
 	}
 
@@ -446,12 +445,12 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
 			upstatuscolor = uptimecolor;
-			sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+			snprintf(msgline, sizeof(msgline), "&%s Machine recently rebooted\n", colorname(uptimecolor));
 			addtobuffer(upmsg, msgline);
 		}
 		if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
 			upstatuscolor = uptimecolor;
-			sprintf(msgline, "&%s Machine has been up more than %d days\n", 
+			snprintf(msgline, sizeof(msgline), "&%s Machine has been up more than %d days\n",
 				colorname(uptimecolor), (ancientlimit / 86400));
 			addtobuffer(upmsg, msgline);
 		}
@@ -460,12 +459,12 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 	else {
 		if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
 			if (cpucolor != COL_RED) cpucolor = uptimecolor;
-			sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+			snprintf(msgline, sizeof(msgline), "&%s Machine recently rebooted\n", colorname(uptimecolor));
 			addtobuffer(cpumsg, msgline);
 		}
 		if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
 			if (cpucolor != COL_RED) cpucolor = uptimecolor;
-			sprintf(msgline, "&%s Machine has been up more than %d days\n", 
+			snprintf(msgline, sizeof(msgline), "&%s Machine has been up more than %d days\n",
 				colorname(uptimecolor), (ancientlimit / 86400));
 			addtobuffer(cpumsg, msgline);
 		}
@@ -497,19 +496,19 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
 			if ((maxclockdiff > 0) && (abs(clockdiff.tv_sec) > maxclockdiff)) {
 				if (cpucolor != COL_RED) cpucolor = clockdiffcolor;
-				sprintf(msgline, "&%s System clock is %ld seconds off (max %ld)\n",
+				snprintf(msgline, sizeof(msgline), "&%s System clock is %ld seconds off (max %ld)\n",
 					colorname(clockdiffcolor), (long) clockdiff.tv_sec, (long) maxclockdiff);
 				addtobuffer(cpumsg, msgline);
 			}
 			else {
-				sprintf(msgline, "System clock is %ld seconds off\n", (long) clockdiff.tv_sec);
+				snprintf(msgline, sizeof(msgline), "System clock is %ld seconds off\n", (long) clockdiff.tv_sec);
 				addtobuffer(cpumsg, msgline);
 			}
 		}
 	}
 
 	init_status(cpucolor);
-	sprintf(msgline, "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
+	snprintf(msgline, sizeof(msgline), "status %s.cpu %s %s %s, %d users, %d procs, load=%s\n",
 		commafy(hostname), colorname(cpucolor), 
 		(timestr ? timestr : "<no timestamp data>"), 
 		myupstr, 
@@ -531,12 +530,12 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (separate_uptime_status) {
 		init_status(upstatuscolor);
-		sprintf(msgline, "status %s.uptime %s %s Uptime %s\n",
+		snprintf(msgline, sizeof(msgline), "status %s.uptime %s %s Uptime %s\n",
 			commafy(hostname), colorname(upstatuscolor), 
 			(timestr ? timestr : "<no timestamp data>"),
 			((upstatuscolor == COL_GREEN) ? "OK" : "Not OK"));
 		addtostatus(msgline);
-		sprintf(msgline, "\nSystem has been %s\n", myupstr);
+		snprintf(msgline, sizeof(msgline), "\nSystem has been %s\n", myupstr);
 		addtostatus(msgline);
 		if (fromline && !localmode) addtostatus(fromline);
 		finish_status();
@@ -598,7 +597,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			p = strdup(bol);
 			fsname = getcolumn(p, mntcol); 
 			if (fsname) {
-				char *msgp = msgline;
+				char numtxt[64];
 
 				add_disk_count(fsname);
 				get_disk_thresholds(hinfo, clientclass, fsname, 
@@ -637,42 +636,47 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					 * /proc) has no 100% and stays out. */
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
 
-					sprintf(msgline, "&red %s is unreachable (not measured)\n", fsname);
-					addtobuffer(monmsg, msgline);
+					addtobuffer(monmsg, "&red ");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " is unreachable (not measured)\n");
 					addalertgroup(group);
 				}
 				else if ( (abspanic && (freecol != -1) && (levelabs <= paniclevel)) ||
 				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
 
-					msgp += sprintf(msgp, "&red %s ", fsname);
+					addtobuffer(monmsg, "&red ");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " ");
 
-					if (abspanic) msgp += sprintf(msgp, "(%lu units free)", levelabs);
-					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+					if (abspanic) snprintf(numtxt, sizeof(numtxt), "(%lu units free)", levelabs);
+					else snprintf(numtxt, sizeof(numtxt), "(%lu%% used)", levelpct);
+					addtobuffer(monmsg, numtxt);
 
-					msgp += sprintf(msgp, " has reached the PANIC level ");
+					addtobuffer(monmsg, " has reached the PANIC level ");
 
-					if (abspanic) msgp += sprintf(msgp, "(%lu units)\n", paniclevel);
-					else msgp += sprintf(msgp, "(%lu%%)\n", paniclevel);
-
-					addtobuffer(monmsg, msgline);
+					if (abspanic) snprintf(numtxt, sizeof(numtxt), "(%lu units)\n", paniclevel);
+					else snprintf(numtxt, sizeof(numtxt), "(%lu%%)\n", paniclevel);
+					addtobuffer(monmsg, numtxt);
 					addalertgroup(group);
 				}
 				else if ( (abswarn && (freecol != -1) && (levelabs <= warnlevel)) ||
 				          (!abswarn && (levelpct >= warnlevel)) ) {
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
 
-					msgp += sprintf(msgp, "&yellow %s ", fsname);
+					addtobuffer(monmsg, "&yellow ");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " ");
 
-					if (abswarn) msgp += sprintf(msgp, "(%lu units free)", levelabs);
-					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+					if (abswarn) snprintf(numtxt, sizeof(numtxt), "(%lu units free)", levelabs);
+					else snprintf(numtxt, sizeof(numtxt), "(%lu%% used)", levelpct);
+					addtobuffer(monmsg, numtxt);
 
-					msgp += sprintf(msgp, " has reached the WARNING level ");
+					addtobuffer(monmsg, " has reached the WARNING level ");
 
-					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
-					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
-
-					addtobuffer(monmsg, msgline);
+					if (abswarn) snprintf(numtxt, sizeof(numtxt), "(%lu units)\n", warnlevel);
+					else snprintf(numtxt, sizeof(numtxt), "(%lu%%)\n", warnlevel);
+					addtobuffer(monmsg, numtxt);
 					addalertgroup(group);
 				}
 
@@ -682,8 +686,11 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					 * and a red filesystem that was not full. */
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
 
-					sprintf(msgline, "&yellow %s is checked in units free, and the report has no '%s' column\n", fsname, freehdr);
-					addtobuffer(monmsg, msgline);
+					addtobuffer(monmsg, "&yellow ");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " is checked in units free, and the report has no '");
+					addtobuffer(monmsg, (freehdr ? freehdr : ""));
+					addtobuffer(monmsg, "' column\n");
 					addalertgroup(group);
 				}
 			}
@@ -706,14 +713,14 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		 * exist is still checked below, and still alerts.
 		 */
 		diskcolor = noreportcolor;
-		sprintf(msgline, "&%s No filesystems to check: every one is excluded by the client's XYMONCLIENT_FS_* settings\n",
+		snprintf(msgline, sizeof(msgline), "&%s No filesystems to check: every one is excluded by the client's XYMONCLIENT_FS_* settings\n",
 			colorname(noreportcolor));
 		addtobuffer(monmsg, msgline);
 	}
 	else if ((capacol == -1) && (mntcol == -1)) {
 		/* If this happens, we havent found our headers so no filesystems have been processed */
 		diskcolor = COL_YELLOW;
-		sprintf(msgline, "&red Expected strings (%s and %s) not found in df output\n", 
+		snprintf(msgline, sizeof(msgline), "&red Expected strings (%s and %s) not found in df output\n",
 			capahdr, mnthdr);
 		addtobuffer(monmsg, msgline);
 
@@ -724,7 +731,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		/* The mount column was found, the capacity column was not: no
 		   filesystem has been checked either */
 		diskcolor = COL_YELLOW;
-		sprintf(msgline, "&red Expected string (%s) not found in df output\n", capahdr);
+		snprintf(msgline, sizeof(msgline), "&red Expected string (%s) not found in df output\n", capahdr);
 		addtobuffer(monmsg, msgline);
 
 		errprintf("Host %s (%s) sent incomprehensible disk report - missing columnheader '%s'\n",
@@ -738,17 +745,17 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		*limtxt = '\0';
 
 		if (dmax == -1) {
-			if (dmin > 0) sprintf(limtxt, "%d or more", dmin);
-			else if (dmin == 0) sprintf(limtxt, "none");
+			if (dmin > 0) snprintf(limtxt, sizeof(limtxt), "%d or more", dmin);
+			else if (dmin == 0) snprintf(limtxt, sizeof(limtxt), "none");
 		}
 		else {
-			if (dmin > 0) sprintf(limtxt, "between %d and %d", dmin, dmax);
-			else if (dmin == 0) sprintf(limtxt, "at most %d", dmax);
+			if (dmin > 0) snprintf(limtxt, sizeof(limtxt), "between %d and %d", dmin, dmax);
+			else if (dmin == 0) snprintf(limtxt, sizeof(limtxt), "at most %d", dmax);
 		}
 
 		if (dcolor != COL_GREEN) {
 			if (dcolor > diskcolor) diskcolor = dcolor;
-			sprintf(msgline, "&%s Filesystem %s (found %d, req. %s)\n", 
+			snprintf(msgline, sizeof(msgline), "&%s Filesystem %s (found %d, req. %s)\n",
 				colorname(dcolor), dname, dcount, limtxt);
 			addtobuffer(monmsg, msgline);
 			addalertgroup(group);
@@ -758,10 +765,10 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	/* Now we know the result, so generate a status message */
 	init_status(diskcolor);
 	group = getalertgroups();
-	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.disk %s %s - Filesystems %s\n",
+	snprintf(msgline, sizeof(msgline), "%s.disk %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(diskcolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		(((diskcolor == COL_RED) || (diskcolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -834,7 +841,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 			p = strdup(bol);
 			fsname = getcolumn(p, mntcol); 
 			if (fsname) {
-				char *msgp = msgline;
+				char numtxt[64];
 
 				add_inode_count(fsname);
 				get_inode_thresholds(hinfo, clientclass, fsname, 
@@ -872,42 +879,53 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					 * disk report. */
 					if (inodecolor < COL_RED) inodecolor = COL_RED;
 
-					sprintf(msgline, "&red <!-- ID=%s --> %s is unreachable (not measured)\n", fsname, fsname);
-					addtobuffer(monmsg, msgline);
+					addtobuffer(monmsg, "&red <!-- ID=");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " --> ");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " is unreachable (not measured)\n");
 					addalertgroup(group);
 				}
 				else if ( (abspanic && (freecol != -1) && (levelabs <= paniclevel)) ||
 				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (inodecolor < COL_RED) inodecolor = COL_RED;
 
-					msgp += sprintf(msgp, "&red <!-- ID=%s --> %s ", fsname, fsname);
+					addtobuffer(monmsg, "&red <!-- ID=");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " --> ");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " ");
 
-					if (abspanic) msgp += sprintf(msgp, "(%lu units free)", levelabs);
-					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+					if (abspanic) snprintf(numtxt, sizeof(numtxt), "(%lu units free)", levelabs);
+					else snprintf(numtxt, sizeof(numtxt), "(%lu%% used)", levelpct);
+					addtobuffer(monmsg, numtxt);
 
-					msgp += sprintf(msgp, " has reached the PANIC level ");
+					addtobuffer(monmsg, " has reached the PANIC level ");
 
-					if (abspanic) msgp += sprintf(msgp, "(%lu units)\n", paniclevel);
-					else msgp += sprintf(msgp, "(%lu%%)\n", paniclevel);
-
-					addtobuffer(monmsg, msgline);
+					if (abspanic) snprintf(numtxt, sizeof(numtxt), "(%lu units)\n", paniclevel);
+					else snprintf(numtxt, sizeof(numtxt), "(%lu%%)\n", paniclevel);
+					addtobuffer(monmsg, numtxt);
 					addalertgroup(group);
 				}
 				else if ( (abswarn && (freecol != -1) && (levelabs <= warnlevel)) ||
 				          (!abswarn && (levelpct >= warnlevel)) ) {
 					if (inodecolor < COL_YELLOW) inodecolor = COL_YELLOW;
 
-					msgp += sprintf(msgp, "&yellow <!-- ID=%s --> %s ", fsname, fsname);
+					addtobuffer(monmsg, "&yellow <!-- ID=");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " --> ");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " ");
 
-					if (abswarn) msgp += sprintf(msgp, "(%lu units free)", levelabs);
-					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+					if (abswarn) snprintf(numtxt, sizeof(numtxt), "(%lu units free)", levelabs);
+					else snprintf(numtxt, sizeof(numtxt), "(%lu%% used)", levelpct);
+					addtobuffer(monmsg, numtxt);
 
-					msgp += sprintf(msgp, " has reached the WARNING level ");
+					addtobuffer(monmsg, " has reached the WARNING level ");
 
-					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
-					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
-
-					addtobuffer(monmsg, msgline);
+					if (abswarn) snprintf(numtxt, sizeof(numtxt), "(%lu units)\n", warnlevel);
+					else snprintf(numtxt, sizeof(numtxt), "(%lu%%)\n", warnlevel);
+					addtobuffer(monmsg, numtxt);
 					addalertgroup(group);
 				}
 
@@ -917,8 +935,13 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					 * and a red filesystem that was not full. */
 					if (inodecolor < COL_YELLOW) inodecolor = COL_YELLOW;
 
-					sprintf(msgline, "&yellow <!-- ID=%s --> %s is checked in units free, and the report has no '%s' column\n", fsname, fsname, freehdr);
-					addtobuffer(monmsg, msgline);
+					addtobuffer(monmsg, "&yellow <!-- ID=");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " --> ");
+					addtobuffer(monmsg, fsname);
+					addtobuffer(monmsg, " is checked in units free, and the report has no '");
+					addtobuffer(monmsg, (freehdr ? freehdr : ""));
+					addtobuffer(monmsg, "' column\n");
 					addalertgroup(group);
 				}
 			}
@@ -943,13 +966,13 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 			 * requires a filesystem to exist is still checked below.
 			 */
 			inodecolor = noreportcolor;
-			sprintf(msgline, "&%s No filesystems reporting inode data\n", colorname(noreportcolor));
+			snprintf(msgline, sizeof(msgline), "&%s No filesystems reporting inode data\n", colorname(noreportcolor));
 			addtobuffer(monmsg, msgline);
 		}
 		else {
 			/* If this happens, we havent found our headers so no filesystems have been processed */
 			inodecolor = COL_YELLOW;
-			sprintf(msgline, "&red Expected strings (%s and %s) not found in df output\n", 
+			snprintf(msgline, sizeof(msgline), "&red Expected strings (%s and %s) not found in df output\n",
 				capahdr, mnthdr);
 			addtobuffer(monmsg, msgline);
 	
@@ -961,7 +984,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 		/* The mount column was found, the capacity column was not: no
 		   filesystem has been checked either */
 		inodecolor = COL_YELLOW;
-		sprintf(msgline, "&red Expected string (%s) not found in df output\n", capahdr);
+		snprintf(msgline, sizeof(msgline), "&red Expected string (%s) not found in df output\n", capahdr);
 		addtobuffer(monmsg, msgline);
 
 		errprintf("Host %s (%s) sent incomprehensible inode report - missing columnheader '%s'\n%s\n",
@@ -975,17 +998,17 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 		*limtxt = '\0';
 
 		if (imax == -1) {
-			if (imin > 0) sprintf(limtxt, "%d or more", imin);
-			else if (imin == 0) sprintf(limtxt, "none");
+			if (imin > 0) snprintf(limtxt, sizeof(limtxt), "%d or more", imin);
+			else if (imin == 0) snprintf(limtxt, sizeof(limtxt), "none");
 		}
 		else {
-			if (imin > 0) sprintf(limtxt, "between %d and %d", imin, imax);
-			else if (imin == 0) sprintf(limtxt, "at most %d", imax);
+			if (imin > 0) snprintf(limtxt, sizeof(limtxt), "between %d and %d", imin, imax);
+			else if (imin == 0) snprintf(limtxt, sizeof(limtxt), "at most %d", imax);
 		}
 
 		if (icolor != COL_GREEN) {
 			if (icolor > inodecolor) inodecolor = icolor;
-			sprintf(msgline, "&%s <!-- ID=%s -->Filesystem %s (found %d, req. %s)\n",
+			snprintf(msgline, sizeof(msgline), "&%s <!-- ID=%s -->Filesystem %s (found %d, req. %s)\n",
 				colorname(icolor), iname, iname, icount, limtxt);
 			addtobuffer(monmsg, msgline);
 			addalertgroup(group);
@@ -995,10 +1018,10 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 	/* Now we know the result, so generate a status message */
 	init_status(inodecolor);
 	group = getalertgroups();
-	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.inode %s %s - Filesystems %s\n",
+	snprintf(msgline, sizeof(msgline), "%s.inode %s %s - Filesystems %s\n",
 		commafy(hostname), colorname(inodecolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		(((inodecolor == COL_RED) || (inodecolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1078,21 +1101,21 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	init_status(memorycolor);
-	sprintf(msgline, "status %s.memory %s %s - Memory %s\n",
+	snprintf(msgline, sizeof(msgline), "status %s.memory %s %s - Memory %s\n",
 		commafy(hostname), colorname(memorycolor), 
 		(timestr ? timestr : "<No timestamp data>"),
 		memorysummary);
 	addtostatus(msgline);
 
-	sprintf(msgline, "   %-16s%12s%12s%12s\n", "Memory", "Used", "Total", "Percentage");
+	snprintf(msgline, sizeof(msgline), "   %-16s%12s%12s%12s\n", "Memory", "Used", "Total", "Percentage");
 	addtostatus(msgline);
 
-	sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%%\n", 
+	snprintf(msgline, sizeof(msgline), "&%s %-16s%11ldM%11ldM%11ld%%\n",
 		colorname(physcolor), "Real/Physical", memphysused, memphystotal, memphyspct);
 	addtostatus(msgline);
 
 	if (memactused != -1) {
-		sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%%\n", 
+		snprintf(msgline, sizeof(msgline), "&%s %-16s%11ldM%11ldM%11ld%%\n",
 			colorname(actcolor), "Actual/Virtual", memactused, memacttotal, memactpct);
 			
 		addtostatus(msgline);
@@ -1100,10 +1123,10 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (memswapused != -1) {
 		if (memswappct <= 100)
-			sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%%\n", 
+			snprintf(msgline, sizeof(msgline), "&%s %-16s%11ldM%11ldM%11ld%%\n",
 				colorname(swapcolor), "Swap/Page", memswapused, memswaptotal, memswappct);
 		else
-			sprintf(msgline, "&%s %-16s%11ldM%11ldM%11ld%% - invalid data\n", 
+			snprintf(msgline, sizeof(msgline), "&%s %-16s%11ldM%11ldM%11ld%% - invalid data\n",
 				colorname(COL_YELLOW), "Swap/Page", memswapused, memswaptotal, 0L);
 
 		addtostatus(msgline);
@@ -1135,7 +1158,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	clearalertgroups();
 	monmsg = newstrbuffer(0);
 
-	sprintf(msgline, "data %s.proccounts\n", commafy(hostname));
+	snprintf(msgline, sizeof(msgline), "data %s.proccounts\n", commafy(hostname));
 	addtobuffer(countdata, msgline);
 
 	/* 
@@ -1176,7 +1199,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (pchecks == 0) {
 		/* Nothing to check */
-		sprintf(msgline, "&%s No process checks defined\n", colorname(noreportcolor));
+		snprintf(msgline, sizeof(msgline), "&%s No process checks defined\n", colorname(noreportcolor));
 		addtobuffer(monmsg, msgline);
 		pscolor = noreportcolor;
 	}
@@ -1210,21 +1233,21 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 			char limtxt[1024];
 
 			if (pmax == -1) {
-				if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
-				else if (pmin == 0) sprintf(limtxt, "none");
+				if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "%d or more", pmin);
+				else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "none");
 			}
 			else {
-				if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
-				else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
+				if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "between %d and %d", pmin, pmax);
+				else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "at most %d", pmax);
 			}
 
 			if (pcolor == COL_GREEN) {
-				sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
+				snprintf(msgline, sizeof(msgline), "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
 			}
 			else {
 				if (pcolor > pscolor) pscolor = pcolor;
-				sprintf(msgline, "&%s %s (found %d, req. %s)\n", 
+				snprintf(msgline, sizeof(msgline), "&%s %s (found %d, req. %s)\n",
 					colorname(pcolor), pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
 				addalertgroup(group);
@@ -1233,7 +1256,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 			if (ptrack) {
 				/* Save the count data for later DATA message to track process counts */
 				if (!pid) pid = "default";
-				sprintf(msgline, "%s:%u\n", pid, pcount);
+				snprintf(msgline, sizeof(msgline), "%s:%u\n", pid, pcount);
 				addtobuffer(countdata, msgline);
 				anycountdata = 1;
 			}
@@ -1241,7 +1264,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 	else {
 		pscolor = COL_YELLOW;
-		sprintf(msgline, "&yellow Expected string %s not found in ps output header\n", cmdhdr);
+		snprintf(msgline, sizeof(msgline), "&yellow Expected string %s not found in ps output header\n", cmdhdr);
 		addtobuffer(monmsg, msgline);
 	}
 
@@ -1249,10 +1272,10 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	init_status(pscolor);
 
 	group = getalertgroups();
-	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.procs %s %s - Processes %s\n",
+	snprintf(msgline, sizeof(msgline), "%s.procs %s %s - Processes %s\n",
 		commafy(hostname), colorname(pscolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		(((pscolor == COL_RED) || (pscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1294,7 +1317,7 @@ static void old_msgs_report(char *hostname, void *hinfo, char *fromline, char *t
 		return;
 
 	init_status(msgscolor);
-	sprintf(msgline, "status %s.msgs %s System logs at %s : %s\n",
+	snprintf(msgline, sizeof(msgline), "status %s.msgs %s System logs at %s : %s\n",
 		commafy(hostname), colorname(msgscolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		summary);
@@ -1348,11 +1371,11 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 		switch (logcolor) {
 		  case COL_GREEN:
 			if (!localmode) {
-				sprintf(msgline, "\nNo entries in <a href=\"%s\">%s</a>\n", 
+				snprintf(msgline, sizeof(msgline), "\nNo entries in <a href=\"%s\">%s</a>\n",
 					hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 			}
 			else {
-				sprintf(msgline, "\nNo entries in %s\n", 
+				snprintf(msgline, sizeof(msgline), "\nNo entries in %s\n",
 					swalk->sname+5);
 			}
 			addtobuffer(greendata, msgline);
@@ -1360,11 +1383,11 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		  case COL_YELLOW: 
 			if (!localmode) {
-				sprintf(msgline, "\n&yellow Warnings in <a href=\"%s\">%s</a>\n", 
+				snprintf(msgline, sizeof(msgline), "\n&yellow Warnings in <a href=\"%s\">%s</a>\n",
 					hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 			}
 			else {
-				sprintf(msgline, "\n&yellow Warnings in %s\n", 
+				snprintf(msgline, sizeof(msgline), "\n&yellow Warnings in %s\n",
 					swalk->sname+5);
 			}
 			addtobuffer(yellowdata, msgline);
@@ -1373,11 +1396,11 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		  case COL_RED:
 			if (!localmode) {
-				sprintf(msgline, "\n&red Critical entries in <a href=\"%s\">%s</a>\n", 
+				snprintf(msgline, sizeof(msgline), "\n&red Critical entries in <a href=\"%s\">%s</a>\n",
 					hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 			}
 			else {
-				sprintf(msgline, "\n&red Critical entries in %s\n", 
+				snprintf(msgline, sizeof(msgline), "\n&red Critical entries in %s\n",
 					swalk->sname+5);
 			}
 			addtobuffer(reddata, msgline);
@@ -1393,10 +1416,10 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	init_status(msgscolor);
 
 	group = getalertgroups();
-	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
 	addtostatus(msgline);
 
-	sprintf(msgline, "%s.msgs %s %s - System logs %s\n",
+	snprintf(msgline, sizeof(msgline), "%s.msgs %s %s - System logs %s\n",
 		commafy(hostname), colorname(msgscolor), 
 		(timestr ? timestr : "<No timestamp data>"),
 		(((msgscolor == COL_RED) || (msgscolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1428,11 +1451,11 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	for (swalk = defsecthead; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 	while (swalk) {
 		if (!localmode) {
-			sprintf(msgline, "\nFull log <a href=\"%s\">%s</a>\n", 
+			snprintf(msgline, sizeof(msgline), "\nFull log <a href=\"%s\">%s</a>\n",
 				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
 		}
 		else {
-			sprintf(msgline, "\nFull log %s\n", 
+			snprintf(msgline, sizeof(msgline), "\nFull log %s\n",
 				swalk->sname+5);
 		}
 		addtostatus(msgline);
@@ -1469,7 +1492,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 	filesummary = newstrbuffer(0);
 	clearalertgroups();
 
-	sprintf(msgline, "data %s.filesizes\n", commafy(hostname));
+	snprintf(msgline, sizeof(msgline), "data %s.filesizes\n", commafy(hostname));
 	addtobuffer(sizedata, msgline);
 
 	for (swalk = defsecthead; (swalk); swalk = swalk->next) {
@@ -1480,16 +1503,16 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (strncmp(swalk->sname, "file:", 5) == 0) {
 			off_t sz;
 			sfn = swalk->sname+5;
-			sprintf(sectionname, "file:%s", sfn);
+			snprintf(sectionname, sizeof(sectionname), "file:%s", sfn);
 			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &id, &trackit, &anyrules);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track file sizes */
 				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", nocolon(id), (long long int)sz);
+				snprintf(msgline, sizeof(msgline), "%s:%lld\n", nocolon(id), (long long int)sz);
 #else
-				sprintf(msgline, "%s:%ld\n", nocolon(id), (long int)sz);
+				snprintf(msgline, sizeof(msgline), "%s:%ld\n", nocolon(id), (long int)sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -1498,15 +1521,15 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		else if (strncmp(swalk->sname, "logfile:", 8) == 0) {
 			off_t sz;
 			sfn = swalk->sname+8;
-			sprintf(sectionname, "logfile:%s", sfn);
+			snprintf(sectionname, sizeof(sectionname), "logfile:%s", sfn);
 			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &id, &trackit, &anyrules);
 			if (trackit) {
 				/* Save the size data for later DATA message to track file sizes */
 				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", nocolon(id), (long long int)sz);
+				snprintf(msgline, sizeof(msgline), "%s:%lld\n", nocolon(id), (long long int)sz);
 #else
-				sprintf(msgline, "%s:%ld\n", nocolon(id), (long int)sz);
+				snprintf(msgline, sizeof(msgline), "%s:%ld\n", nocolon(id), (long int)sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -1520,13 +1543,13 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		else if (strncmp(swalk->sname, "dir:", 4) == 0) {
 			unsigned long sz;
 			sfn = swalk->sname+4;
-			sprintf(sectionname, "dir:%s", sfn);
+			snprintf(sectionname, sizeof(sectionname), "dir:%s", sfn);
 			onecolor = check_dir(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &id, &trackit);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track directory sizes */
 				if (id == NULL) id = sfn;
-				sprintf(msgline, "%s:%lu\n", nocolon(id), sz);
+				snprintf(msgline, sizeof(msgline), "%s:%lu\n", nocolon(id), sz);
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
 			}
@@ -1538,22 +1561,22 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		switch (onecolor) {
 		  case COL_GREEN:
 			if (!localmode) {
-				sprintf(msgline, "\n&green <a href=\"%s\">%s</a>\n", 
+				snprintf(msgline, sizeof(msgline), "\n&green <a href=\"%s\">%s</a>\n",
 					hostsvcclienturl(hostname, sectionname), sfn);
 			}
 			else {
-				sprintf(msgline, "\n&green %s\n", sfn);
+				snprintf(msgline, sizeof(msgline), "\n&green %s\n", sfn);
 			}
 			addtobuffer(greendata, msgline);
 			break;
 
 		  case COL_YELLOW: 
 			if (!localmode) {
-				sprintf(msgline, "\n&yellow <a href=\"%s\">%s</a>\n", 
+				snprintf(msgline, sizeof(msgline), "\n&yellow <a href=\"%s\">%s</a>\n",
 					hostsvcclienturl(hostname, sectionname), sfn);
 			}
 			else {
-				sprintf(msgline, "\n&yellow %s\n", sfn);
+				snprintf(msgline, sizeof(msgline), "\n&yellow %s\n", sfn);
 			}
 			addtobuffer(yellowdata, msgline);
 			addtostrbuffer(yellowdata, filesummary);
@@ -1561,11 +1584,11 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		  case COL_RED:
 			if (!localmode) {
-				sprintf(msgline, "\n&red <a href=\"%s\">%s</a>\n", 
+				snprintf(msgline, sizeof(msgline), "\n&red <a href=\"%s\">%s</a>\n",
 					hostsvcclienturl(hostname, sectionname), sfn);
 			}
 			else {
-				sprintf(msgline, "\n&red %s\n", sfn);
+				snprintf(msgline, sizeof(msgline), "\n&red %s\n", sfn);
 			}
 			addtobuffer(reddata, msgline);
 			addtostrbuffer(reddata, filesummary);
@@ -1586,10 +1609,10 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		init_status(filecolor);
 
 		group = getalertgroups();
-		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+		if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
 		addtostatus(msgline);
 
-		sprintf(msgline, "%s.files %s %s - Files %s\n",
+		snprintf(msgline, sizeof(msgline), "%s.files %s %s - Files %s\n",
 			commafy(hostname), colorname(filecolor), 
 			(timestr ? timestr : "<No timestamp data>"),
 			(((filecolor == COL_RED) || (filecolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -1637,7 +1660,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (!countdata) countdata = newstrbuffer(0);
 
-	sprintf(msgline, "data %s.linecounts\n", commafy(hostname));
+	snprintf(msgline, sizeof(msgline), "data %s.linecounts\n", commafy(hostname));
 	addtobuffer(countdata, msgline);
 
 	for (swalk = defsecthead; (swalk); swalk = swalk->next) {
@@ -1680,7 +1703,7 @@ void deltacount_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (!countdata) countdata = newstrbuffer(0);
 
-	sprintf(msgline, "data %s.deltacounts\n", commafy(hostname));
+	snprintf(msgline, sizeof(msgline), "data %s.deltacounts\n", commafy(hostname));
 	addtobuffer(countdata, msgline);
 
 	for (swalk = defsecthead; (swalk); swalk = swalk->next) {
@@ -1723,7 +1746,7 @@ void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (!netstatstr) return;
 
 	msg = newstrbuffer(0);
-	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osname(os));
+	snprintf(msgline, sizeof(msgline), "data %s.netstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, netstatstr);
 	combo_add(msg);
@@ -1740,7 +1763,7 @@ void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (!ifstatstr) return;
 
 	msg = newstrbuffer(0);
-	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osname(os));
+	snprintf(msgline, sizeof(msgline), "data %s.ifstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, ifstatstr);
 	combo_add(msg);
@@ -1767,7 +1790,7 @@ void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 	if (strcmp(p+1,"Terminated") == 0) return;	/* vmstat process was killed early - ignore data */
 	msg = newstrbuffer(0);
-	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osname(os));
+	snprintf(msgline, sizeof(msgline), "data %s.vmstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, p+1);
 	combo_add(msg);
@@ -1796,7 +1819,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 	clearalertgroups();
 	pchecks = clear_port_counts(hinfo, clientclass);
 
-	sprintf(msgline, "data %s.portcounts\n", commafy(hostname));
+	snprintf(msgline, sizeof(msgline), "data %s.portcounts\n", commafy(hostname));
 	addtobuffer(countdata, msgline);
 
 	if (pchecks > 0) {
@@ -1830,22 +1853,22 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 
 			*limtxt = '\0';
 			if (pmax == -1) {
-				if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
-				else if (pmin == 0) sprintf(limtxt, "none");
+				if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "%d or more", pmin);
+				else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "none");
 			}
 			else {
-				if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
-				else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
+				if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "between %d and %d", pmin, pmax);
+				else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "at most %d", pmax);
 			}
 
 			if (pcolor > portcolor) portcolor = pcolor;
 
 			if (pcolor == COL_GREEN) {
-				sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
+				snprintf(msgline, sizeof(msgline), "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
 			}
 			else {
-				sprintf(msgline, "&%s %s (found %d, req. %s)\n",
+				snprintf(msgline, sizeof(msgline), "&%s %s (found %d, req. %s)\n",
 					colorname(pcolor), pname, pcount, limtxt);
 				addtobuffer(monmsg, msgline);
 				addalertgroup(group);
@@ -1854,7 +1877,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 			if (ptrack) {
 				/* Save the size data for later DATA message to track port counts */
 				if (!pid) pid = "default";
-				sprintf(msgline, "%s:%u\n", pid, pcount);
+				snprintf(msgline, sizeof(msgline), "%s:%u\n", pid, pcount);
 				addtobuffer(countdata, msgline);
 				anycountdata = 1;
 			}
@@ -1872,10 +1895,10 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		init_status(portcolor);
 
 		group = getalertgroups();
-		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+		if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
 		addtostatus(msgline);
 
-		sprintf(msgline, "%s.ports %s %s - Ports %s\n",
+		snprintf(msgline, sizeof(msgline), "%s.ports %s %s - Ports %s\n",
 			commafy(hostname), colorname(portcolor), 
 			(timestr ? timestr : "<No timestamp data>"), 
 			(((portcolor == COL_RED) || (portcolor == COL_YELLOW)) ? "NOT ok" : "ok"));
@@ -2063,14 +2086,16 @@ void testmode(char *configfn)
 		else if (strcmp(s, "log") == 0) {
 			FILE *fd;
 			char *sectname;
+			size_t sectnamesz;
 			strbuffer_t *logdata, *logsummary;
 			int logcolor;
 
 			printf("log filename: "); fflush(stdout);
 			if (!fgets(s, sizeof(s), stdin)) return;
 			clean_instr(s);
-			sectname = (char *)malloc(strlen(s) + 20);
-			sprintf(sectname, "msgs:%s", s);
+			sectnamesz = strlen(s) + 20;
+			sectname = (char *)malloc(sectnamesz);
+			snprintf(sectname, sectnamesz, "msgs:%s", s);
 
 			logdata = newstrbuffer(0);
 			logsummary = newstrbuffer(0);
@@ -2152,12 +2177,12 @@ void testmode(char *configfn)
  				char limtxt[1024];
 			
 				if (pmax == -1) {
-					if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
-					else if (pmin == 0) sprintf(limtxt, "none");
+					if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "%d or more", pmin);
+					else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "none");
 				}
 				else {
-					if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
-					else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
+					if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "between %d and %d", pmin, pmax);
+					else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "at most %d", pmax);
 				}
 
 				if (pcolor == COL_GREEN) {
