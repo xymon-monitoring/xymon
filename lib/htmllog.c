@@ -167,7 +167,6 @@ static void textwithcolorimg(char *msg, FILE *output)
 	} while (restofmsg);
 }
 
-
 void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
 		       int color, int flapping, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
@@ -514,6 +513,11 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 
 		if (may_have_rrd) {
+			if (!graphsenv && graph) {
+				int rrdcount = xymon_graph_count(hostname, service, graph, HG_WITHOUT_STALE_RRDS, locatorbased, now);
+				if (rrdcount >= 0) linecount = rrdcount;
+			}
+
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
 			fprintf(output, "<a name=\"begingraph\">&nbsp;</a>\n");
 
@@ -538,7 +542,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 					memset(&localgraph, 0, sizeof(localgraph));
 					localgraph.xymonrrdname = graphsptr;
 					localgraph.maxinstancesperimage = (owngdef ? owngdef->maxinstancesperimage : (graph ? graph->maxinstancesperimage : 0));
-					fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, &localgraph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+					{
+						int graphcount = linecount;
+						int rrdcount = xymon_graph_count(hostname, graphsptr, &localgraph, HG_WITHOUT_STALE_RRDS, locatorbased, now);
+						if (rrdcount >= 0) graphcount = rrdcount;
+						fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, graphsptr, color, &localgraph, graphcount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+					}
 					graphsptr = strtok(NULL,",");
 				}
 				xfree(graphscopy);
@@ -708,4 +717,3 @@ char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 
 	return result;
 }
-
