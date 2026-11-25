@@ -547,6 +547,33 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 }
 
 
+/*
+ * A mount point comes verbatim from the client's df output and has no length
+ * limit. The per-filesystem alert lines below are built in a fixed msgline[],
+ * so the mount point is copied into a bounded field first (dispfs) to keep
+ * each line whole -- its trailing newline, and the inode line's closing
+ * "-->" -- however long the original is. MAXFSNAMELEN is well under half the
+ * line buffer, since the inode line carries the name twice, and comfortably
+ * past any real mount point. addline() then guards the rest: a vsnprintf()
+ * wrapper that never writes past the buffer and, once it is full, adds nothing.
+ */
+#define MAXFSNAMELEN 1024
+
+static char *addline(char *p, char *base, size_t sz, const char *fmt, ...)
+{
+	size_t used = (size_t)(p - base);
+	int n;
+	va_list ap;
+
+	if (used >= sz - 1) return p;			/* no room left */
+	va_start(ap, fmt);
+	n = vsnprintf(p, sz - used, fmt, ap);
+	va_end(ap);
+	if (n < 0) return p;
+	if ((size_t)n >= sz - used) return base + (sz - 1);	/* truncated */
+	return p + n;
+}
+
 void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		      void *hinfo, char *fromline, char *timestr, 
 		      char *freehdr, char *capahdr, char *mnthdr, char *dfstr)
@@ -599,6 +626,9 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			fsname = getcolumn(p, mntcol); 
 			if (fsname) {
 				char *msgp = msgline;
+				char dispfs[MAXFSNAMELEN+1];
+
+				snprintf(dispfs, sizeof dispfs, "%s", fsname);
 
 				add_disk_count(fsname);
 				get_disk_thresholds(hinfo, clientclass, fsname, 
@@ -637,7 +667,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					 * /proc) has no 100% and stays out. */
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
 
-					sprintf(msgline, "&red %s is unreachable (not measured)\n", fsname);
+					snprintf(msgline, sizeof(msgline), "&red %s is unreachable (not measured)\n", dispfs);
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
@@ -645,15 +675,15 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (diskcolor < COL_RED) diskcolor = COL_RED;
 
-					msgp += sprintf(msgp, "&red %s ", fsname);
+					msgp = addline(msgp, msgline, sizeof(msgline), "&red %s ", dispfs);
 
-					if (abspanic) msgp += sprintf(msgp, "(%lu units free)", levelabs);
-					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+					if (abspanic) msgp = addline(msgp, msgline, sizeof(msgline), "(%lu units free)", levelabs);
+					else msgp = addline(msgp, msgline, sizeof(msgline), "(%lu%% used)", levelpct);
 
-					msgp += sprintf(msgp, " has reached the PANIC level ");
+					msgp = addline(msgp, msgline, sizeof(msgline), " has reached the PANIC level ");
 
-					if (abspanic) msgp += sprintf(msgp, "(%lu units)\n", paniclevel);
-					else msgp += sprintf(msgp, "(%lu%%)\n", paniclevel);
+					if (abspanic) msgp = addline(msgp, msgline, sizeof(msgline), "(%lu units)\n", paniclevel);
+					else msgp = addline(msgp, msgline, sizeof(msgline), "(%lu%%)\n", paniclevel);
 
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
@@ -662,15 +692,15 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 				          (!abswarn && (levelpct >= warnlevel)) ) {
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
 
-					msgp += sprintf(msgp, "&yellow %s ", fsname);
+					msgp = addline(msgp, msgline, sizeof(msgline), "&yellow %s ", dispfs);
 
-					if (abswarn) msgp += sprintf(msgp, "(%lu units free)", levelabs);
-					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+					if (abswarn) msgp = addline(msgp, msgline, sizeof(msgline), "(%lu units free)", levelabs);
+					else msgp = addline(msgp, msgline, sizeof(msgline), "(%lu%% used)", levelpct);
 
-					msgp += sprintf(msgp, " has reached the WARNING level ");
+					msgp = addline(msgp, msgline, sizeof(msgline), " has reached the WARNING level ");
 
-					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
-					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
+					if (abswarn) msgp = addline(msgp, msgline, sizeof(msgline), "(%lu units)\n", warnlevel);
+					else msgp = addline(msgp, msgline, sizeof(msgline), "(%lu%%)\n", warnlevel);
 
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
@@ -682,7 +712,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 					 * and a red filesystem that was not full. */
 					if (diskcolor < COL_YELLOW) diskcolor = COL_YELLOW;
 
-					sprintf(msgline, "&yellow %s is checked in units free, and the report has no '%s' column\n", fsname, freehdr);
+					snprintf(msgline, sizeof(msgline), "&yellow %s is checked in units free, and the report has no '%s' column\n", dispfs, freehdr);
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
@@ -835,6 +865,9 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 			fsname = getcolumn(p, mntcol); 
 			if (fsname) {
 				char *msgp = msgline;
+				char dispfs[MAXFSNAMELEN+1];
+
+				snprintf(dispfs, sizeof dispfs, "%s", fsname);
 
 				add_inode_count(fsname);
 				get_inode_thresholds(hinfo, clientclass, fsname, 
@@ -872,7 +905,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					 * disk report. */
 					if (inodecolor < COL_RED) inodecolor = COL_RED;
 
-					sprintf(msgline, "&red <!-- ID=%s --> %s is unreachable (not measured)\n", fsname, fsname);
+					snprintf(msgline, sizeof(msgline), "&red <!-- ID=%s --> %s is unreachable (not measured)\n", dispfs, dispfs);
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
@@ -880,15 +913,15 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 				     (!abspanic && (levelpct >= paniclevel)) ) {
 					if (inodecolor < COL_RED) inodecolor = COL_RED;
 
-					msgp += sprintf(msgp, "&red <!-- ID=%s --> %s ", fsname, fsname);
+					msgp = addline(msgp, msgline, sizeof(msgline), "&red <!-- ID=%s --> %s ", dispfs, dispfs);
 
-					if (abspanic) msgp += sprintf(msgp, "(%lu units free)", levelabs);
-					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+					if (abspanic) msgp = addline(msgp, msgline, sizeof(msgline), "(%lu units free)", levelabs);
+					else msgp = addline(msgp, msgline, sizeof(msgline), "(%lu%% used)", levelpct);
 
-					msgp += sprintf(msgp, " has reached the PANIC level ");
+					msgp = addline(msgp, msgline, sizeof(msgline), " has reached the PANIC level ");
 
-					if (abspanic) msgp += sprintf(msgp, "(%lu units)\n", paniclevel);
-					else msgp += sprintf(msgp, "(%lu%%)\n", paniclevel);
+					if (abspanic) msgp = addline(msgp, msgline, sizeof(msgline), "(%lu units)\n", paniclevel);
+					else msgp = addline(msgp, msgline, sizeof(msgline), "(%lu%%)\n", paniclevel);
 
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
@@ -897,15 +930,15 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 				          (!abswarn && (levelpct >= warnlevel)) ) {
 					if (inodecolor < COL_YELLOW) inodecolor = COL_YELLOW;
 
-					msgp += sprintf(msgp, "&yellow <!-- ID=%s --> %s ", fsname, fsname);
+					msgp = addline(msgp, msgline, sizeof(msgline), "&yellow <!-- ID=%s --> %s ", dispfs, dispfs);
 
-					if (abswarn) msgp += sprintf(msgp, "(%lu units free)", levelabs);
-					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+					if (abswarn) msgp = addline(msgp, msgline, sizeof(msgline), "(%lu units free)", levelabs);
+					else msgp = addline(msgp, msgline, sizeof(msgline), "(%lu%% used)", levelpct);
 
-					msgp += sprintf(msgp, " has reached the WARNING level ");
+					msgp = addline(msgp, msgline, sizeof(msgline), " has reached the WARNING level ");
 
-					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
-					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
+					if (abswarn) msgp = addline(msgp, msgline, sizeof(msgline), "(%lu units)\n", warnlevel);
+					else msgp = addline(msgp, msgline, sizeof(msgline), "(%lu%%)\n", warnlevel);
 
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
@@ -917,7 +950,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 					 * and a red filesystem that was not full. */
 					if (inodecolor < COL_YELLOW) inodecolor = COL_YELLOW;
 
-					sprintf(msgline, "&yellow <!-- ID=%s --> %s is checked in units free, and the report has no '%s' column\n", fsname, fsname, freehdr);
+					snprintf(msgline, sizeof(msgline), "&yellow <!-- ID=%s --> %s is checked in units free, and the report has no '%s' column\n", dispfs, dispfs, freehdr);
 					addtobuffer(monmsg, msgline);
 					addalertgroup(group);
 				}
