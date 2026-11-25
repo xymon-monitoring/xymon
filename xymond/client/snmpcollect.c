@@ -28,7 +28,7 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 	char fromline[1024], msgline[1024];
 	strbuffer_t *summary = newstrbuffer(0);
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	onemib = nextsection_r(clientdata, &mibname, &ns1var, &ns1sects);
 	while (onemib) {
@@ -81,9 +81,9 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 		/* Generate the status message */
 		groups = getalertgroups();
 		init_status(color);
-		if (groups) sprintf(msgline, "status/group:%s ", groups); else strcpy(msgline, "status ");
+		if (groups) snprintf(msgline, sizeof(msgline), "status/group:%s ", groups); else strcpy(msgline, "status ");
 		addtostatus(msgline);
-		sprintf(msgline, "%s.%s %s %s\n", hostname, mibname, colorname(color), ctime(&timestamp));
+		snprintf(msgline, sizeof(msgline), "%s.%s %s %s\n", hostname, mibname, colorname(color), ctime(&timestamp));
 		addtostatus(msgline);
 		if (STRBUFLEN(summary) > 0) {
 			addtostrstatus(summary);

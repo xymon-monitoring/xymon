@@ -2583,10 +2583,10 @@ int check_mibvals(void *hinfo, char *classname,
 		  default:
 			if (actval < minval) {
 				if (keyname)
-					sprintf(msgline, "&%s %s:%s %ld (minimum: %ld)\n",
+					snprintf(msgline, sizeof(msgline), "&%s %s:%s %ld (minimum: %ld)\n",
 						colorname(rulecolor), keyname, dnam, actval, minval);
 				else 
-					sprintf(msgline, "&%s %s %ld (minimum: %ld)\n",
+					snprintf(msgline, sizeof(msgline), "&%s %s %ld (minimum: %ld)\n",
 						colorname(rulecolor), dnam, actval, minval);
 				addtobuffer(summarybuf, msgline);
 				if (rulecolor > color) color = rulecolor;
@@ -2595,10 +2595,10 @@ int check_mibvals(void *hinfo, char *classname,
 
 			if (actval > maxval) {
 				if (keyname)
-					sprintf(msgline, "&%s %s:%s %ld (maximum: %ld)\n",
+					snprintf(msgline, sizeof(msgline), "&%s %s:%s %ld (maximum: %ld)\n",
 						colorname(rulecolor), keyname, dnam, actval, maxval);
 				else 
-					sprintf(msgline, "&%s %s %ld (maximum: %ld)\n",
+					snprintf(msgline, sizeof(msgline), "&%s %s %ld (maximum: %ld)\n",
 						colorname(rulecolor), dnam, actval, maxval);
 				addtobuffer(summarybuf, msgline);
 				if (rulecolor > color) color = rulecolor;
@@ -2611,17 +2611,17 @@ int check_mibvals(void *hinfo, char *classname,
 					if (group) addalertgroup(group);
 
 					if (keyname)
-						sprintf(msgline, "&%s %s:%s %s (expected: %s)\n",
+						snprintf(msgline, sizeof(msgline), "&%s %s:%s %s (expected: %s)\n",
 								colorname(rulecolor), keyname, dnam, dval, ((exprlist_t *)matchexp)->pattern);
 					else 
-						sprintf(msgline, "&%s %s %s (expected: %s)\n",
+						snprintf(msgline, sizeof(msgline), "&%s %s %s (expected: %s)\n",
 								colorname(rulecolor), dnam, dval, ((exprlist_t *)matchexp)->pattern);
 				}
 				else {
 					if (keyname) 
-						sprintf(msgline, "&green %s:%s %s\n", keyname, dnam, dval);
+						snprintf(msgline, sizeof(msgline), "&green %s:%s %s\n", keyname, dnam, dval);
 					else
-						sprintf(msgline, "&green %s %s\n", dnam, dval);
+						snprintf(msgline, sizeof(msgline), "&green %s %s\n", dnam, dval);
 				}
 
 				addtobuffer(summarybuf, msgline);
@@ -2691,7 +2691,7 @@ int scan_log(void *hinfo, char *classname,
 					/* We wants it ... */
 					dbgprintf("FOUND match in line '%s'\n", boln);
 					anylines++;
-					sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
+					snprintf(msgline, sizeof(msgline), "&%s ", colorname(rule->rule.log.color));
 					addtobuffer(summarybuf, msgline);
 					addtobuffer(summarybuf, prehtmlquoted(boln));
 					addtobuffer(summarybuf, "\n");
@@ -2860,7 +2860,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_TYPE) {
 			if ( ((rwalk->rule.fcheck.ftype == S_IFLNK) && !islink) || (rwalk->rule.fcheck.ftype != ftype) ) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File is a %s - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File is a %s - should be %s\n",
 					ftypestr(ftype), ftypestr(rwalk->rule.fcheck.ftype));
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2868,7 +2868,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_MODE) {
 			if (rwalk->rule.fcheck.fmode != fmode) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File is mode %03o - should be %03o\n", 
+				snprintf(msgline, sizeof(msgline), "File is mode %03o - should be %03o\n",
 					fmode, rwalk->rule.fcheck.fmode);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2877,10 +2877,10 @@ int check_file(void *hinfo, char *classname,
 			if (fsize < rwalk->rule.fcheck.minsize) {
 				rulecolor = rwalk->rule.fcheck.color;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "File has size %lld  - should be >%lld\n", 
+				snprintf(msgline, sizeof(msgline), "File has size %lld  - should be >%lld\n",
 					(long long int)fsize, (long long int)rwalk->rule.fcheck.minsize);
 #else
-				sprintf(msgline, "File has size %ld  - should be >%ld\n", 
+				snprintf(msgline, sizeof(msgline), "File has size %ld  - should be >%ld\n",
 					(long int)fsize, (long int)rwalk->rule.fcheck.minsize);
 #endif
 				addtobuffer(summarybuf, msgline);
@@ -2890,10 +2890,10 @@ int check_file(void *hinfo, char *classname,
 			if (fsize > rwalk->rule.fcheck.maxsize) {
 				rulecolor = rwalk->rule.fcheck.color;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "File has size %lld  - should be <%lld\n", 
+				snprintf(msgline, sizeof(msgline), "File has size %lld  - should be <%lld\n",
 					(long long int)fsize, (long long int)rwalk->rule.fcheck.maxsize);
 #else
-				sprintf(msgline, "File has size %ld  - should be <%ld\n", 
+				snprintf(msgline, sizeof(msgline), "File has size %ld  - should be <%ld\n",
 					(long int)fsize, (long int)rwalk->rule.fcheck.maxsize);
 #endif
 				addtobuffer(summarybuf, msgline);
@@ -2903,10 +2903,10 @@ int check_file(void *hinfo, char *classname,
 			if (fsize != rwalk->rule.fcheck.eqlsize) {
 				rulecolor = rwalk->rule.fcheck.color;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "File has size %lld  - should be %lld\n", 
+				snprintf(msgline, sizeof(msgline), "File has size %lld  - should be %lld\n",
 					(long long int)fsize, (long long int)rwalk->rule.fcheck.eqlsize);
 #else
-				sprintf(msgline, "File has size %ld  - should be %ld\n", 
+				snprintf(msgline, sizeof(msgline), "File has size %ld  - should be %ld\n",
 					(long int)fsize, (long int)rwalk->rule.fcheck.eqlsize);
 #endif
 				addtobuffer(summarybuf, msgline);
@@ -2915,7 +2915,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_MINLINKS) {
 			if (linkcount < rwalk->rule.fcheck.minlinks) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has linkcount %u  - should be >%u\n", 
+				snprintf(msgline, sizeof(msgline), "File has linkcount %u  - should be >%u\n",
 					linkcount, rwalk->rule.fcheck.minlinks);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2923,7 +2923,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_MAXLINKS) {
 			if (linkcount > rwalk->rule.fcheck.maxlinks) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has linkcount %u  - should be <%u\n", 
+				snprintf(msgline, sizeof(msgline), "File has linkcount %u  - should be <%u\n",
 					linkcount, rwalk->rule.fcheck.maxlinks);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2931,7 +2931,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_OWNERID) {
 			if (ownerid != rwalk->rule.fcheck.ownerid) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File is owned by user %u  - should be %u\n", 
+				snprintf(msgline, sizeof(msgline), "File is owned by user %u  - should be %u\n",
 					ownerid, rwalk->rule.fcheck.ownerid);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2940,7 +2940,7 @@ int check_file(void *hinfo, char *classname,
 			if (!ownerstr) ownerstr = "(No owner data)";
 			if (strcmp(ownerstr, rwalk->rule.fcheck.ownerstr) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File is owned by user %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File is owned by user %s  - should be %s\n",
 					ownerstr, rwalk->rule.fcheck.ownerstr);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2948,7 +2948,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_GROUPID) {
 			if (groupid != rwalk->rule.fcheck.groupid) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File is owned by group %u  - should be %u\n", 
+				snprintf(msgline, sizeof(msgline), "File is owned by group %u  - should be %u\n",
 					groupid, rwalk->rule.fcheck.groupid);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2957,7 +2957,7 @@ int check_file(void *hinfo, char *classname,
 			if (!groupstr) groupstr = "(No group data)";
 			if (strcmp(groupstr, rwalk->rule.fcheck.groupstr) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File is owned by group %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File is owned by group %s  - should be %s\n",
 					groupstr, rwalk->rule.fcheck.groupstr);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2965,7 +2965,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_CTIMEMIN) {
 			if (ctimedif < rwalk->rule.fcheck.minctimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File status changed %u seconds ago - should be >%u\n", 
+				snprintf(msgline, sizeof(msgline), "File status changed %u seconds ago - should be >%u\n",
 					ctimedif, rwalk->rule.fcheck.minctimedif);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2973,7 +2973,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_CTIMEMAX) {
 			if (ctimedif > rwalk->rule.fcheck.maxctimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File status changed %u seconds ago - should be <%u\n", 
+				snprintf(msgline, sizeof(msgline), "File status changed %u seconds ago - should be <%u\n",
 					ctimedif, rwalk->rule.fcheck.maxctimedif);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2981,7 +2981,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_MTIMEMIN) {
 			if (mtimedif < rwalk->rule.fcheck.minmtimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File was modified %u seconds ago - should be >%u\n", 
+				snprintf(msgline, sizeof(msgline), "File was modified %u seconds ago - should be >%u\n",
 					mtimedif, rwalk->rule.fcheck.minmtimedif);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2989,7 +2989,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_MTIMEMAX) {
 			if (mtimedif > rwalk->rule.fcheck.maxmtimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File was modified %u seconds ago - should be <%u\n", 
+				snprintf(msgline, sizeof(msgline), "File was modified %u seconds ago - should be <%u\n",
 					mtimedif, rwalk->rule.fcheck.maxmtimedif);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2997,7 +2997,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_ATIMEMIN) {
 			if (atimedif < rwalk->rule.fcheck.minatimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File was accessed %u seconds ago - should be >%u\n", 
+				snprintf(msgline, sizeof(msgline), "File was accessed %u seconds ago - should be >%u\n",
 					atimedif, rwalk->rule.fcheck.minatimedif);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3005,7 +3005,7 @@ int check_file(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_ATIMEMAX) {
 			if (atimedif > rwalk->rule.fcheck.maxatimedif) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File was accessed %u seconds ago - should be <%u\n", 
+				snprintf(msgline, sizeof(msgline), "File was accessed %u seconds ago - should be <%u\n",
 					atimedif, rwalk->rule.fcheck.maxatimedif);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3014,7 +3014,7 @@ int check_file(void *hinfo, char *classname,
 			if (!md5hash) md5hash = "(No MD5 data)";
 			if (strcmp(md5hash, rwalk->rule.fcheck.md5hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has MD5 hash %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File has MD5 hash %s  - should be %s\n",
 					md5hash, rwalk->rule.fcheck.md5hash);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3023,7 +3023,7 @@ int check_file(void *hinfo, char *classname,
 			if (!sha1hash) sha1hash = "(No SHA1 data)";
 			if (strcmp(sha1hash, rwalk->rule.fcheck.sha1hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has SHA1 hash %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File has SHA1 hash %s  - should be %s\n",
 					sha1hash, rwalk->rule.fcheck.sha1hash);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3032,7 +3032,7 @@ int check_file(void *hinfo, char *classname,
 			if (!sha256hash) sha256hash = "(No SHA256 data)";
 			if (strcmp(sha256hash, rwalk->rule.fcheck.sha256hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has SHA256 hash %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File has SHA256 hash %s  - should be %s\n",
 					sha256hash, rwalk->rule.fcheck.sha256hash);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3041,7 +3041,7 @@ int check_file(void *hinfo, char *classname,
 			if (!sha512hash) sha512hash = "(No SHA256 data)";
 			if (strcmp(sha512hash, rwalk->rule.fcheck.sha512hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has SHA512 hash %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File has SHA512 hash %s  - should be %s\n",
 					sha512hash, rwalk->rule.fcheck.sha512hash);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3050,7 +3050,7 @@ int check_file(void *hinfo, char *classname,
 			if (!sha224hash) sha224hash = "(No SHA224 data)";
 			if (strcmp(sha224hash, rwalk->rule.fcheck.sha224hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has SHA224 hash %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File has SHA224 hash %s  - should be %s\n",
 					sha224hash, rwalk->rule.fcheck.sha224hash);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3059,7 +3059,7 @@ int check_file(void *hinfo, char *classname,
 			if (!sha384hash) sha384hash = "(No SHA384 data)";
 			if (strcmp(sha384hash, rwalk->rule.fcheck.sha384hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has SHA384 hash %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File has SHA384 hash %s  - should be %s\n",
 					sha384hash, rwalk->rule.fcheck.sha384hash);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3068,7 +3068,7 @@ int check_file(void *hinfo, char *classname,
 			if (!rmd160hash) rmd160hash = "(No RMD160 data)";
 			if (strcmp(rmd160hash, rwalk->rule.fcheck.rmd160hash) != 0) {
 				rulecolor = rwalk->rule.fcheck.color;
-				sprintf(msgline, "File has RMD160 hash %s  - should be %s\n", 
+				snprintf(msgline, sizeof(msgline), "File has RMD160 hash %s  - should be %s\n",
 					rmd160hash, rwalk->rule.fcheck.rmd160hash);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3129,7 +3129,7 @@ int check_dir(void *hinfo, char *classname,
 
 	/* Got the data? */
 	if (!gotsize) {
-		sprintf(msgline, "Could not determine size of directory %s\n", filename);
+		snprintf(msgline, sizeof(msgline), "Could not determine size of directory %s\n", filename);
 		addtobuffer(summarybuf, msgline);
 		return COL_YELLOW;
 	}
@@ -3143,7 +3143,7 @@ int check_dir(void *hinfo, char *classname,
 		if (rwalk->flags & FCHK_MAXSIZE) {
 			if (dsize > rwalk->rule.dcheck.maxsize) {
 				rulecolor = rwalk->rule.dcheck.color;
-				sprintf(msgline, "Directory has size %lu  - should be <%lu\n", 
+				snprintf(msgline, sizeof(msgline), "Directory has size %lu  - should be <%lu\n",
 					dsize, rwalk->rule.dcheck.maxsize);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3151,7 +3151,7 @@ int check_dir(void *hinfo, char *classname,
 		else if (rwalk->flags & FCHK_MINSIZE) {
 			if (dsize < rwalk->rule.dcheck.minsize) {
 				rulecolor = rwalk->rule.dcheck.color;
-				sprintf(msgline, "Directory has size %lu  - should be >%lu\n", 
+				snprintf(msgline, sizeof(msgline), "Directory has size %lu  - should be >%lu\n",
 					dsize, rwalk->rule.dcheck.minsize);
 				addtobuffer(summarybuf, msgline);
 			}
@@ -3274,7 +3274,7 @@ strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagep
 		if (rulematch) {
 			char *bot, *marker;
 
-			sprintf(msgline, "modify %s.%s %s rrdds ", 
+			snprintf(msgline, sizeof(msgline), "modify %s.%s %s rrdds ",
 				hostname, rule->rule.rrdds.column,
 				colorname(rule->rule.rrdds.color));
 			addtobuffer(resbuf, msgline);
@@ -3296,12 +3296,12 @@ strbuffer_t *check_rrdds_thresholds(char *hostname, char *classname, char *pagep
 						    bot = marker+2; 
 						    break;
 
-					  case 'L': sprintf(msgline, "%.2f", rule->rule.rrdds.limitval); 
+					  case 'L': snprintf(msgline, sizeof(msgline), "%.2f", rule->rule.rrdds.limitval);
 						    addtobuffer(resbuf, msgline);
 						    bot = marker+2;
 						    break;
 
-					  case 'U': sprintf(msgline, "%.2f", (rule->flags & RRDDSCHK_INTVL) ? rule->rule.rrdds.limitval2 : rule->rule.rrdds.limitval); 
+					  case 'U': snprintf(msgline, sizeof(msgline), "%.2f", (rule->flags & RRDDSCHK_INTVL) ? rule->rule.rrdds.limitval2 : rule->rule.rrdds.limitval);
 						    addtobuffer(resbuf, msgline);
 						    bot = marker+2;
 						    break;

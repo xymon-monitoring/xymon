@@ -41,7 +41,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	unsigned long memswaptotal = 0, memswapfree = 0, memswapused = 0;
 	int found = 0;
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	splitmsg(clientdata);
 

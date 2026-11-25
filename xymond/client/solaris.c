@@ -38,7 +38,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	char fromline[1024];
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	splitmsg(clientdata);
 
@@ -152,7 +152,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 		p = strchr(iostatdiskstr, '\n'); 
 		if (p) {
 			p++;
-			sprintf(msgline, "data %s.iostatdisk\n%s\n", commafy(hostname), osname(os));
+			snprintf(msgline, sizeof(msgline), "data %s.iostatdisk\n%s\n", commafy(hostname), osname(os));
 			addtobuffer(msg, msgline);
 			addtobuffer(msg, p);
 			combo_add(msg);

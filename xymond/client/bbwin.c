@@ -51,17 +51,17 @@ static void bbwin_uptime_report(char *hostname, char *clientclass, enum ostype_t
         upmsg = newstrbuffer(0);
         if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
                 if (upcolor != COL_RED) upcolor = uptimecolor;
-                sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+                snprintf(msgline, sizeof(msgline), "&%s Machine recently rebooted\n", colorname(uptimecolor));
                 addtobuffer(upmsg, msgline);
         }
         if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
                 if (upcolor != COL_RED) upcolor = uptimecolor;
-                sprintf(msgline, "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
+                snprintf(msgline, sizeof(msgline), "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
                 addtobuffer(upmsg, msgline);
         }
 
         init_status(upcolor);
-        sprintf(msgline, "status %s.uptime %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.uptime %s %s %s\n",
                 commafy(hostname), colorname(upcolor),
                 (timestr ? timestr : "<No timestamp data>"),
                 ((upcolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -130,12 +130,12 @@ static void bbwin_cpu_report(char *hostname, char *clientclass, enum ostype_t os
                 addtobuffer(cpumsg, "&yellow Load is HIGH\n");
         }
         init_status(cpucolor);
-        sprintf(msgline, "status %s.cpu %s %s %s",
+        snprintf(msgline, sizeof(msgline), "status %s.cpu %s %s ",
                 commafy(hostname), colorname(cpucolor),
-                (timestr ? timestr : "<No timestamp data>"),
-                cpuutilstr);
+                (timestr ? timestr : "<No timestamp data>"));
 
         addtostatus(msgline);
+        addtostatus(cpuutilstr);
         /* And add the info if pb */
         if (STRBUFLEN(cpumsg)) {
                 addtostrstatus(cpumsg);
@@ -223,19 +223,19 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
 
                         if ((maxclockdiff > 0) && (abs(clockdiff.tv_sec) > maxclockdiff)) {
                                 if (clockcolor != COL_RED) clockcolor = clockdiffcolor;
-                                sprintf(msgline, "&%s System clock is %ld seconds off (max %ld)\n",
+                                snprintf(msgline, sizeof(msgline), "&%s System clock is %ld seconds off (max %ld)\n",
                                         colorname(clockdiffcolor), (long) clockdiff.tv_sec, (long) maxclockdiff);
                                 addtobuffer(clockmsg, msgline);
                         }
                         else {
-                                sprintf(msgline, "System clock is %ld seconds off\n", (long) clockdiff.tv_sec);
+                                snprintf(msgline, sizeof(msgline), "System clock is %ld seconds off\n", (long) clockdiff.tv_sec);
                                 addtobuffer(clockmsg, msgline);
                         }
                 }
         }
 
         init_status(clockcolor);
-        sprintf(msgline, "status %s.timediff %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.timediff %s %s %s\n",
                 commafy(hostname), colorname(clockcolor),
                 (timestr ? timestr : "<No timestamp data>"),
                 ((clockcolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -275,7 +275,7 @@ void bbwin_who_report(char *hostname, char *clientclass, enum ostype_t os,
         whomsg = newstrbuffer(0);
 
         init_status(whocolor);
-        sprintf(msgline, "status %s.who %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.who %s %s %s\n",
                 commafy(hostname), colorname(whocolor),
                 (timestr ? timestr : "<No timestamp data>"),
                 ((whocolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -352,11 +352,11 @@ void bbwin_svcs_report(char *hostname, char *clientclass, enum ostype_t os,
                         if (scolor > svccolor) svccolor = scolor;
 
                         if (scolor == COL_GREEN) {
-                                sprintf(msgline, "&green %s\n", sname);
+                                snprintf(msgline, sizeof(msgline), "&green %s\n", sname);
                                 addtobuffer(monmsg, msgline);
                         }
                         else {
-                                sprintf(msgline, "&%s %s\n",
+                                snprintf(msgline, sizeof(msgline), "&%s %s\n",
                                         colorname(scolor), sname);
                                 addtobuffer(monmsg, msgline);
                                 addalertgroup(group);
@@ -379,10 +379,10 @@ void bbwin_svcs_report(char *hostname, char *clientclass, enum ostype_t os,
                 init_status(svccolor);
 
                 group = getalertgroups();
-                if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+                if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
                 addtostatus(msgline);
 
-                sprintf(msgline, "%s.svcs %s %s - Services %s\n",
+                snprintf(msgline, sizeof(msgline), "%s.svcs %s %s - Services %s\n",
                         commafy(hostname), colorname(svccolor),
                         (timestr ? timestr : "<No timestamp data>"),
                         ((svccolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -431,7 +431,7 @@ void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t o
 
 	char fromline[1024];
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	splitmsg(clientdata);
 
