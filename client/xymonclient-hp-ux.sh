@@ -87,9 +87,9 @@ then
     then
         echo "[top]"
 	# Cits Bogajewski 03-08-2005: redirect of top fails
-	$TOP -d 1 -f $XYMONHOME/tmp/top.OUT
-	cat $XYMONHOME/tmp/top.OUT
-	rm $XYMONHOME/tmp/top.OUT
+	$TOP -d 1 -f $XYMONTMP/top.OUT
+	cat $XYMONTMP/top.OUT
+	rm $XYMONTMP/top.OUT
     fi
 fi
 

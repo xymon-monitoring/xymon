@@ -69,27 +69,39 @@ export MACHINEDOTS SERVEROSTYPE XYMONOSSCRIPT XYMONCLIENTHOME CONFIGCLASS
 MACHINE="`echo $MACHINEDOTS | sed -e 's/\./,/g'`"
 export MACHINE
 
+# The log and tmp directories are the ones xymonclient.cfg names. xymoncmd
+# reads the file as xymonlaunch will and expands the '$NAME' it is given
+# against it, so a value naming another variable, as XYMONTMP="$XYMONHOME/tmp"
+# does, comes out as the client programs see it. A file naming no tmp
+# directory gets XYMONTMP's built-in default, as those programs do. Where the
+# file names no log directory, or xymoncmd cannot run, the directory under
+# XYMONCLIENTHOME is used.
+CLIENTLOGS="`$XYMONCLIENTHOME/bin/xymoncmd --env=$XYMONCLIENTHOME/etc/xymonclient.cfg printf '%s' '$XYMONCLIENTLOGS' 2>/dev/null`"
+test "$CLIENTLOGS" != "" || CLIENTLOGS="$XYMONCLIENTHOME/logs"
+CLIENTTMP="`$XYMONCLIENTHOME/bin/xymoncmd --env=$XYMONCLIENTHOME/etc/xymonclient.cfg printf '%s' '$XYMONTMP' 2>/dev/null`"
+test "$CLIENTTMP" != "" || CLIENTTMP="$XYMONCLIENTHOME/tmp"
+
 case "$CMD" in
   "start")
-  	if test ! -w $XYMONCLIENTHOME/logs; then
-		echo "Cannot write to the $XYMONCLIENTHOME/logs directory"
+	if test ! -w $CLIENTLOGS; then
+		echo "Cannot write to the $CLIENTLOGS directory"
 		exit 1
 	fi
-  	if test ! -w $XYMONCLIENTHOME/tmp; then
-		echo "Cannot write to the $XYMONCLIENTHOME/tmp directory"
+	if test ! -w $CLIENTTMP; then
+		echo "Cannot write to the $CLIENTTMP directory"
 		exit 1
 	fi
 
-  	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
+	if test -s $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid; then
 		echo "Xymon client already running, re-starting it"
 		$0 --hostname="$MACHINEDOTS" stop
-		rm -f $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+		rm -f $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid
 	fi
 
 	# --env, as the server's xymon.sh does: the launcher expands each task's
 	# pidfile path itself, so it must read what its tasks read - all of which
 	# already load this file through ENVFILE.
-	$XYMONCLIENTHOME/bin/xymonlaunch --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --env=$XYMONCLIENTHOME/etc/xymonclient.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log --pidfile=$XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+	$XYMONCLIENTHOME/bin/xymonlaunch --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --env=$XYMONCLIENTHOME/etc/xymonclient.cfg --log=$CLIENTLOGS/clientlaunch.log --pidfile=$CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid
 	if test $? -eq 0; then
 		echo "Xymon client for $SERVEROSTYPE started on $MACHINEDOTS"
 	else
@@ -98,8 +110,8 @@ case "$CMD" in
 	;;
 
   "stop")
-  	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
-		kill `cat $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
+	if test -s $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid; then
+		kill `cat $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid`
 		echo "Xymon client stopped"
 	else
 		echo "Xymon client not running"
@@ -107,7 +119,7 @@ case "$CMD" in
 	;;
 
   "restart")
-  	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
+	if test -s $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid; then
 		$0 --hostname="$MACHINEDOTS" stop
 	else
 		echo "Xymon client not running, continuing to start it"
@@ -117,16 +129,16 @@ case "$CMD" in
 	;;
 
   "status")
-	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+	if test -s $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid
 	then
-		kill -0 `cat $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
+		kill -0 `cat $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid`
 		if test $? -eq 0
 		then
-			echo "Xymon client (clientlaunch) running with PID `cat $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`"
+			echo "Xymon client (clientlaunch) running with PID `cat $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid`"
 			exit 0
 		else
 			echo "Xymon client not running, removing stale PID file"
-			rm -f $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+			rm -f $CLIENTLOGS/clientlaunch.$MACHINEDOTS.pid
 			exit 1
 		fi
 	else
