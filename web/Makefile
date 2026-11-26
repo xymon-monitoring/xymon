@@ -175,10 +175,13 @@ install-cgi: install-bin
 
 install-bin:
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chown -h $(XYMONUSER) $(PROGRAMS)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
 	chmod 755 $(PROGRAMS)
 endif
+	# Remove each destination name first: $(INSTALLBINDIR) belongs to $(XYMONUSER),
+	# so a name there may be a symlink cp -fp would follow and write through.
+	for f in $(PROGRAMS); do rm -f $(INSTALLROOT)$(INSTALLBINDIR)/$$f; done
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-cgi:
@@ -189,17 +192,20 @@ install-cgi:
 
 install-man:
 ifndef PKGBUILD
-	chown $(XYMONUSER) *.1 *.5 *.8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5 *.8
+	chown -h $(XYMONUSER) *.1 *.5 *.8
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5 *.8
 	chmod 644 *.1 *.5 *.8
 endif
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
 	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
 endif
+	for m in *.1; do rm -f $(INSTALLROOT)$(MANROOT)/man1/$$m; done
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
+	for m in *.5; do rm -f $(INSTALLROOT)$(MANROOT)/man5/$$m; done
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
+	for m in *.8; do rm -f $(INSTALLROOT)$(MANROOT)/man8/$$m; done
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 

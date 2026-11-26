@@ -33,19 +33,23 @@ install: install-bin install-man
 
 install-bin:
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chown -h $(XYMONUSER) $(PROGRAMS)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
 	chmod 755 $(PROGRAMS)
 endif
+	# Remove each destination name first: $(INSTALLBINDIR) belongs to $(XYMONUSER),
+	# so a name there may be a symlink cp -fp would follow and write through.
+	for f in $(PROGRAMS); do rm -f $(INSTALLROOT)$(INSTALLBINDIR)/$$f; done
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man8
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man8 *.8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man8 *.8
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man8 *.8
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man8 *.8
 	chmod 755 $(INSTALLROOT)$(MANROOT)/man8
 	chmod 644 *.8
 endif
+	for m in *.8; do rm -f $(INSTALLROOT)$(MANROOT)/man8/$$m; done
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 

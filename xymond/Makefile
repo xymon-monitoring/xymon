@@ -188,8 +188,11 @@ ifndef PKGBUILD
 	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
 	chmod 755 $(INSTALLROOT)$(MANROOT) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
 endif
+	for m in *.1; do rm -f $(INSTALLROOT)$(MANROOT)/man1/$$m; done
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
+	for m in *.5; do rm -f $(INSTALLROOT)$(MANROOT)/man5/$$m; done
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
+	for m in *.8; do rm -f $(INSTALLROOT)$(MANROOT)/man8/$$m; done
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 
 install-cfg:
@@ -203,6 +206,10 @@ install-cfg:
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/ ../../build/md5.dat
 	cd webfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
+	# critical.cfg/.bak are state files xymond maintains; touch ensures they
+	# exist and the chmod sets their mode. A symlink left at either name would
+	# be followed by both, so drop a symlink there first (a real file is kept).
+	for c in $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak; do if test -L $$c; then rm -f $$c; fi; done
 	touch $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
 	chmod 664 $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
 	mkdir -p $(INSTALLROOT)$(XYMONLOGDIR); chmod 755 $(INSTALLROOT)$(XYMONLOGDIR)

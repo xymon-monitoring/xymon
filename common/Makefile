@@ -115,8 +115,12 @@ ifndef PKGBUILD
 	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
 	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
 endif
+	for m in *.1; do rm -f $(INSTALLROOT)$(MANROOT)/man1/$$m; done
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
+	for m in *.5; do rm -f $(INSTALLROOT)$(MANROOT)/man5/$$m; done
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
+	for m in *.7; do rm -f $(INSTALLROOT)$(MANROOT)/man7/$$m; done
 	cp -fp *.7 $(INSTALLROOT)$(MANROOT)/man7/
+	for m in *.8; do rm -f $(INSTALLROOT)$(MANROOT)/man8/$$m; done
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 

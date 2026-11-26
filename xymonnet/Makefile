@@ -105,18 +105,22 @@ install: install-bin install-ext install-config install-man
 
 install-bin: $(PROGRAMS)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chown -h $(XYMONUSER) $(PROGRAMS)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
 	chmod 755 $(PROGRAMS)
 endif
+	# Remove each destination name first: $(INSTALLBINDIR) belongs to $(XYMONUSER),
+	# so a name there may be a symlink cp -fp would follow and write through.
+	for f in $(PROGRAMS); do rm -f $(INSTALLROOT)$(INSTALLBINDIR)/$$f; done
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-ext: $(EXTENSIONS)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(EXTENSIONS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(EXTENSIONS)
+	chown -h $(XYMONUSER) $(EXTENSIONS)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(EXTENSIONS)
 	chmod 755 $(EXTENSIONS)
 endif
+	for e in $(EXTENSIONS); do rm -f $(INSTALLROOT)$(INSTALLEXTDIR)/$$e; done
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
 # The debug tool "all" builds, xymonnetprobe -- contest.c built standalone,
@@ -125,33 +129,40 @@ endif
 # top-level "make install-tools"; deliberately not part of "install".
 install-tools: $(DBGTOOLS)
 	@mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
+	rm -f $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
 	cp -fp xymonnetprobe $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
 	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
 endif
 
 install-config:
+	# protocols.cfg may be an admin-edited real file that merge-sects updates in
+	# place, so a symlink left at the name would be written through. Drop a
+	# symlink there first; a real file is kept.
+	if test -L $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; fi
 	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 	chmod 644 $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 endif
 
 install-man:
 ifndef PKGBUILD
-	chown $(XYMONUSER) *.1 *.5
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5
+	chown -h $(XYMONUSER) *.1 *.5
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5
 	chmod 644 *.1 *.5
 endif
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
 	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
 endif
+	for m in *.1; do rm -f $(INSTALLROOT)$(MANROOT)/man1/$$m; done
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
+	for m in *.5; do rm -f $(INSTALLROOT)$(MANROOT)/man5/$$m; done
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
 

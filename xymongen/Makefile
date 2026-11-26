@@ -31,23 +31,27 @@ install: install-bin install-man
 
 install-bin: $(PROGRAMS)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
+	chown -h $(XYMONUSER) $(PROGRAMS)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
 	chmod 755 $(PROGRAMS) 
 endif
+	# Remove each destination name first: $(INSTALLBINDIR) belongs to $(XYMONUSER),
+	# so a name there may be a symlink cp -fp would follow and write through.
+	for f in $(PROGRAMS); do rm -f $(INSTALLROOT)$(INSTALLBINDIR)/$$f; done
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-man:
 ifndef PKGBUILD
-	chown $(XYMONUSER) *.1
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1
+	chown -h $(XYMONUSER) *.1
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` *.1
 	chmod 644 *.1
 endif
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1
 	chmod 755 $(INSTALLROOT)$(MANROOT)/man1
 endif
+	for m in *.1; do rm -f $(INSTALLROOT)$(MANROOT)/man1/$$m; done
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
 
