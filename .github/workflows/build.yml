@@ -176,6 +176,16 @@ jobs:
           fi
           exit "$rc"
 
+      - name: Run the install tests that need root
+        # install-replaces-existing-names.sh sets a different owner, which the
+        # ownership step needs root for, so it skips in the run above (this
+        # runner is not root). Run it under sudo. Its skip (exit 77 -- e.g. the
+        # client is not built in this lane) is not a failure.
+        run: |
+          rc=0
+          sudo env "PATH=$PATH" bash tests/buildsystem/install-replaces-existing-names.sh || rc=$?
+          [ "$rc" = 0 ] || [ "$rc" = 77 ] || exit "$rc"
+
   # The HTML manual pages under docs/manpages/ are generated from the roff
   # sources and committed alongside them, and nothing ever checked that the two
   # agree. They drifted for seven years: the last full regeneration is the
