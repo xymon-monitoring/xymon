@@ -98,12 +98,12 @@ install:
 	if test ! -d $(INSTALLROOT)$(XYMONHOME)/local ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/local ; test -L $(INSTALLROOT)$(XYMONHOME)/local || chmod 755 $(INSTALLROOT)$(XYMONHOME)/local; fi
 	# The drop-in directories clientlaunch.cfg and xymonclient.cfg include,
 	# made here as xymond/Makefile makes the server's own.
-	for d in clientlaunch.d xymonclient.d; do mkdir -p $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d || chmod 755 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; done
+	for d in clientlaunch.d xymonclient.d; do mkdir -p $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d || chmod 755 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d || exit 1; done
 	# These install a default only when the name is absent, to keep an admin's
 	# edited copy on reinstall. A symlink left at the name would make "test ! -f"
 	# follow it and cp write through it, so remove a symlink there first.
-	if test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg; then rm -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg; fi; if test ! -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/ ; chmod 644 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg; fi
-	if test -L $(INSTALLROOT)$(XYMONHOME)/local/README; then rm -f $(INSTALLROOT)$(XYMONHOME)/local/README; fi; if test ! -f $(INSTALLROOT)$(XYMONHOME)/local/README; then cp README-local $(INSTALLROOT)$(XYMONHOME)/local/README ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/local/README; fi
+	if test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg && test ! -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg; then rm -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg; fi; if test ! -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/ ; chmod 644 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg; fi
+	if test -L $(INSTALLROOT)$(XYMONHOME)/local/README && test ! -f $(INSTALLROOT)$(XYMONHOME)/local/README; then rm -f $(INSTALLROOT)$(XYMONHOME)/local/README; fi; if test ! -f $(INSTALLROOT)$(XYMONHOME)/local/README; then cp README-local $(INSTALLROOT)$(XYMONHOME)/local/README ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/local/README; fi
 	chmod 755 runclient.sh $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS)
 	# Remove each destination name before copying: an earlier install, or #411's
 	# relocation, may have left a symlink at the name, and cp -fp would write
@@ -125,7 +125,7 @@ ifndef PKGBUILD
 	# symlink, and chown -h on each entry acts on the link, not its target.
 	find $(INSTALLROOT)$(XYMONHOME) -exec chown -h $(XYMONUSER) {} \;
 	find $(INSTALLROOT)$(XYMONHOME) -exec chgrp -h `$(IDTOOL) -g $(XYMONUSER)` {} \;
-	chmod 755 $(INSTALLROOT)$(XYMONHOME)
+	test -L $(INSTALLROOT)$(XYMONHOME) || chmod 755 $(INSTALLROOT)$(XYMONHOME)
 	# A relocated bin or etc is outside XYMONHOME: the tools keep whatever
 	# ownership cp preserved, and the config files and drop-in directories are
 	# created here and stay root's. Named one by one rather than chowned

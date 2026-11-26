@@ -138,9 +138,10 @@ ifndef PKGBUILD
 endif
 
 install-config:
-	# protocols.cfg may be an admin-edited real file that merge-sects updates in
-	# place, so a symlink left at the name would be written through. Drop a
-	# symlink there first; a real file is kept.
+	# protocols.cfg may be an admin-edited real file. merge-sects reads the name
+	# (to merge in new sections) following a symlink there, copying the link's
+	# target into the .bak; it unlinks the name before writing, so the write does
+	# not follow. Drop a symlink here so the read does not either.
 	if test -L $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; fi
 	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 ifndef PKGBUILD

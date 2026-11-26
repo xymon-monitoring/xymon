@@ -187,8 +187,11 @@ endif
 install-cgi:
 	mkdir -p $(INSTALLROOT)$(CGIDIR)
 	mkdir -p $(INSTALLROOT)$(SECURECGIDIR)
-	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F || exit 1; done
-	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F || exit 1; done
+	# $(CGIDIR) belongs to $(XYMONUSER): a symlink left at a name would make
+	# ln -f hard-link cgiwrap into the link's target directory. Remove the name
+	# first so the link is made at the name.
+	for F in $(CGISCRIPTS); do rm -f $(INSTALLROOT)$(CGIDIR)/$$F; ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F || exit 1; done
+	for F in $(SECCGISCRIPTS); do rm -f $(INSTALLROOT)$(SECURECGIDIR)/$$F; ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F || exit 1; done
 
 install-man:
 ifndef PKGBUILD

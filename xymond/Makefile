@@ -206,16 +206,16 @@ install-cfg:
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/ ../../build/md5.dat
 	cd webfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
-	# critical.cfg/.bak are state files xymond maintains; touch ensures they
-	# exist and the chmod sets their mode. A symlink left at either name would
-	# be followed by both, so drop a symlink there first (a real file is kept).
-	for c in $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak; do if test -L $$c; then rm -f $$c; fi; done
+	# critical.cfg/.bak are state files xymond maintains; an admin may legitimately
+	# symlink them to persistent storage, so do not remove a symlink here. touch
+	# ensures they exist; skip the chmod when the name is a symlink rather than
+	# follow it to set the target's mode.
 	touch $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
-	chmod 664 $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
+	for c in $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak; do test -L $$c || chmod 664 $$c || exit 1; done
 	mkdir -p $(INSTALLROOT)$(XYMONLOGDIR); test -L $(INSTALLROOT)$(XYMONLOGDIR) || chmod 755 $(INSTALLROOT)$(XYMONLOGDIR)
 	mkdir -p $(INSTALLROOT)$(XYMONRUNDIR); test -L $(INSTALLROOT)$(XYMONRUNDIR) || chmod 755 $(INSTALLROOT)$(XYMONRUNDIR)
 	mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d; test -L $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d || chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d
-	for d in alerts.d analysis.d combo.d graphs.d client-local.d rrddefinitions.d hosts.d xymonserver.d; do mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)/$$d; test -L $(INSTALLROOT)$(INSTALLETCDIR)/$$d || chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)/$$d; done
+	for d in alerts.d analysis.d combo.d graphs.d client-local.d rrddefinitions.d hosts.d xymonserver.d; do mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)/$$d; test -L $(INSTALLROOT)$(INSTALLETCDIR)/$$d || chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)/$$d || exit 1; done
 ifndef PKGBUILD
 	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONRUNDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(XYMONVAR) $(INSTALLROOT)$(XYMONVAR)/*
 	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONRUNDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(XYMONVAR) $(INSTALLROOT)$(XYMONVAR)/*
@@ -226,7 +226,7 @@ ifndef PKGBUILD
 	find $(INSTALLROOT)$(INSTALLEXTDIR) -exec chown -h $(XYMONUSER) {} \;
 	find $(INSTALLROOT)$(INSTALLEXTDIR) -exec chgrp -h `$(IDTOOL) -g $(XYMONUSER)` {} \;
 	chgrp -h $(HTTPDGID) $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
-	chmod 664 $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
+	for c in $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak; do test -L $$c || chmod 664 $$c || exit 1; done
 
 	chown -h root $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || echo "Could not make xymonping owned by root, continuing"
 	# chmod has no portable -h and this sets the setuid bit, so never run it on a

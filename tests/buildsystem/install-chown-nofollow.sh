@@ -70,7 +70,7 @@ done
 cm=""
 for f in $MAKEFILES; do
 	[ -f "$ROOT/$f" ] || continue
-	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod .*(XYMONVAR\)/|INSTALL[A-Z]+DIR\)( |;|\$)|/tasks\.d|\\\$\\\$[a-z]|XYMONLOGDIR\)|XYMONRUNDIR\)|XYMONHOME\)/download)" || true)
+	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod .*(XYMONVAR\)/|INSTALL[A-Z]+DIR\)( |;|\$)|/tasks\.d|\\\$\\\$[a-z]|XYMONLOGDIR\)|XYMONRUNDIR\)|XYMONHOME\)/download|XYMONHOME\)( |;|$))" || true)
 	[ -z "$lines" ] || while IFS= read -r l; do
 		[ -n "$l" ] || continue
 		case $l in *"test -L"*) ;; *) cm="$cm
@@ -98,17 +98,18 @@ EOF
 done
 [ -z "$su" ] || fail "a setuid/setgid chmod on an installed name is not guarded by 'test -L ... ||', so a symlink there would have its target made setuid-root:$su"
 
-# A "cp -fp ... $(INSTALLROOT)..." copies into a directory $(XYMONUSER) owns, so
-# a symlink at the destination name would be written through. Each such line
-# must drop the name first: a "rm -f" on the same line or the line before it
-# (a per-name loop, or the "test -L ...; rm -f" of a preserved config).
+# A "cp -fp ..." or "ln -f ..." into $(INSTALLROOT)... writes into a directory
+# $(XYMONUSER) owns, so a symlink at the destination name would be followed (cp
+# writes through it; ln -f hard-links into the link's target directory). Each
+# such line must drop the name first: a "rm -f" on the same line or the line
+# before it (a per-name loop, or the "test -L ...; rm -f" of a preserved config).
 co=""
 for f in $MAKEFILES; do
 	[ -f "$ROOT/$f" ] || continue
 	prev=""
 	while IFS= read -r line; do
 		case $line in
-		*"-fp "*INSTALLROOT*)
+		*"-fp "*INSTALLROOT*|*"ln -f "*INSTALLROOT*)
 			case $prev$line in *"rm -f"*) ;; *) co="$co
 $f: $line" ;; esac ;;
 		esac

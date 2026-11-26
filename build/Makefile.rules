@@ -316,7 +316,7 @@ ifndef PKGBUILD
 	# with a symlink (mkdir -p no-ops and chown -h acts on the link, on purpose).
 	# chmod has no portable -h, so skip it when the name is a symlink rather than
 	# follow it to the target's mode -- as for the $(XYMONVAR) data dirs below.
-	for d in $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR); do test -L $$d || chmod 755 $$d; done
+	for d in $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR); do test -L $$d || chmod 755 $$d || exit 1; done
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLBINDIR))
@@ -393,12 +393,12 @@ endif
 ifndef PKGBUILD
 	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 	chgrp -h `$(IDTOOL) -g $(XYMONUSER)`  $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
-	for d in $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap; do test -L $$d || chmod 755 $$d; done
+	for d in $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap; do test -L $$d || chmod 755 $$d || exit 1; done
 ifdef HTTPDGID
 # The www/rep and www/snap directories must be writable by the apache daemon
 	chgrp -h $(HTTPDGID) $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 endif
-	for d in $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap; do test -L $$d || chmod g+w $$d; done
+	for d in $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap; do test -L $$d || chmod g+w $$d || exit 1; done
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/acks)
