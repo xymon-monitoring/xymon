@@ -22,11 +22,15 @@ clean:
 install:
 	mkdir -p $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages
 	cd manpages; tar cf - . | (cd $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages; tar xf -)
+	# help/ belongs to $(XYMONUSER): remove each name before copying so a symlink
+	# there is not followed and written through.
+	for h in *html *txt *png *jpg; do rm -f $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/$$h; done
 	cp -f *html *txt *png *jpg $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/; rm -f $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/man-index.html
+	rm -f $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages/index.html
 	cp -f man-index.html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages/index.html
 ifndef PKGBUILD
-	chown -R $(XYMONUSER) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help
-	chgrp -R `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help
+	find $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help -exec chown -h $(XYMONUSER) {} \;
+	find $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help -exec chgrp -h `$(IDTOOL) -g $(XYMONUSER)` {} \;
 	# These may fail if no files installed
 	(find $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/ -type d | xargs chmod 755 ) || /bin/true
 	(find $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/ -type f | xargs chmod 644 ) || /bin/true

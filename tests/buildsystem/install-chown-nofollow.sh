@@ -23,7 +23,7 @@ ROOT=$(find_root)
 # Every makefile that installs: the server skeleton, the client, and each
 # component that copies programs, extensions, manpages or config into a
 # directory $(XYMONUSER) ends up owning.
-MAKEFILES="build/Makefile.rules client/Makefile common/Makefile xymond/Makefile xymonnet/Makefile web/Makefile xymongen/Makefile xymonproxy/Makefile"
+MAKEFILES="build/Makefile.rules client/Makefile common/Makefile xymond/Makefile xymonnet/Makefile web/Makefile xymongen/Makefile xymonproxy/Makefile docs/Makefile lib/Makefile"
 
 bad=""
 rec=""
@@ -70,10 +70,17 @@ done
 cm=""
 for f in $MAKEFILES; do
 	[ -f "$ROOT/$f" ] || continue
-	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod .*(XYMONVAR\)/|INSTALL[A-Z]+DIR\)( |;|\$)|/tasks\.d|\\\$\\\$[a-z]|XYMONLOGDIR\)|XYMONRUNDIR\)|XYMONHOME\)/download|XYMONHOME\)( |;|$))" || true)
+	# docs/ and lib/ install only files into these directories, never chmod the
+	# directories themselves, so they have no directory chmod to check here.
+	case $f in docs/Makefile|lib/Makefile) continue ;; esac
+	# Match a chmod on a directory name $(XYMONUSER) owns, in either order (a loop
+	# puts the dir token in the "for" list, before the chmod). A chmod on a file
+	# *under* such a dir (e.g. .../foo.cfg, .../lib/$$f) keeps the "/" after the
+	# token and is not matched -- those are covered by their cp/rm-f.
+	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod " | grep -E "(XYMONVAR\)/|INSTALL[A-Z]+DIR\)( |;|\$)|\.d( |;|\$)|XYMONLOGDIR\)|XYMONRUNDIR\)|XYMONHOME\)( |;|/download|\$))" || true)
 	[ -z "$lines" ] || while IFS= read -r l; do
 		[ -n "$l" ] || continue
-		case $l in *"test -L"*) ;; *) cm="$cm
+		case $l in *"test -L"*|*"-exec chmod"*) ;; *) cm="$cm
 $f: ${l#*:}" ;; esac
 	done <<EOF
 $lines
@@ -109,7 +116,7 @@ for f in $MAKEFILES; do
 	prev=""
 	while IFS= read -r line; do
 		case $line in
-		*"-fp "*INSTALLROOT*|*"ln -f "*INSTALLROOT*)
+		*"cp -f"*INSTALLROOT*|*"ln -f "*INSTALLROOT*)
 			case $prev$line in *"rm -f"*) ;; *) co="$co
 $f: $line" ;; esac ;;
 		esac
@@ -120,4 +127,21 @@ EOF
 done
 [ -z "$co" ] || fail "a copy into an install directory (\$(INSTALLROOT)...) is not preceded by a 'rm -f' of its destination, so a symlink at the name is written through:$co"
 
-pass "no install makefile follows a symlink at an installed name: every chown/chgrp carries -h and is non-recursive, every cp drops the destination name first, and every chmod on a \$(XYMONVAR) subdirectory skips a symlink there"
+# merge-sects/merge-lines read the current config (to merge new entries in)
+# following a symlink at the name, copying the link's target into the .bak that
+# $(XYMONUSER) owns. Each such line must drop a symlink at the name first.
+mg=""
+for f in $MAKEFILES; do
+	[ -f "$ROOT/$f" ] || continue
+	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "build/merge-(sects|lines) .*INSTALLROOT" || true)
+	[ -z "$lines" ] || while IFS= read -r l; do
+		[ -n "$l" ] || continue
+		case $l in *"test -L"*) ;; *) mg="$mg
+$f: ${l#*:}" ;; esac
+	done <<EOF
+$lines
+EOF
+done
+[ -z "$mg" ] || fail "a merge-sects/merge-lines into an install config is not preceded by 'test -L ...; rm -f', so a symlink at the name is read through into the .bak:$mg"
+
+pass "no install makefile follows a symlink at an installed name: every chown/chgrp carries -h and is non-recursive, every cp/ln and merge drops the destination name first, and every chmod on a \$(XYMONUSER)-owned install directory skips a symlink there"

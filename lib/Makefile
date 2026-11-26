@@ -40,12 +40,16 @@ client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 INSTALLARCHIVES = $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB)
 
 install:
+	# $(INSTALLLIBDIR) is under $(XYMONHOME) and $(XYMONUSER)-owned: remove each
+	# name before copying so a symlink there is not followed and written through.
+	for a in $(INSTALLARCHIVES); do rm -f $(INSTALLROOT)$(INSTALLLIBDIR)/$$a; done
 	cp -f $(INSTALLARCHIVES) $(INSTALLROOT)$(INSTALLLIBDIR)/
 	cd $(INSTALLROOT)$(INSTALLLIBDIR) && chmod 644 $(INSTALLARCHIVES)
 	# Shared objects only if this tree built any: devel does, main does
 	# not, and an unmatched glob must not look like a failure.
 	for f in *.so*; do \
 		test -e "$$f" || continue; \
+		rm -f $(INSTALLROOT)$(INSTALLLIBDIR)/"$$f"; \
 		cp -f "$$f" $(INSTALLROOT)$(INSTALLLIBDIR)/ || exit 1; \
 		chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/"$$f" || exit 1; \
 	done
@@ -54,7 +58,9 @@ install:
 	# remaining headers as "../lib/...", so a flat directory breaks on
 	# the first include. One -I$(INSTALLINCDIR)/include then works.
 	mkdir -p $(INSTALLROOT)$(INSTALLINCDIR)/include $(INSTALLROOT)$(INSTALLINCDIR)/lib
+	for h in ../include/*.h; do rm -f $(INSTALLROOT)$(INSTALLINCDIR)/include/$${h##*/}; done
 	cp -f ../include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/include/
+	for h in *.h; do rm -f $(INSTALLROOT)$(INSTALLINCDIR)/lib/$$h; done
 	cp -f *.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/
 	chmod 644 $(INSTALLROOT)$(INSTALLINCDIR)/include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/*.h
 
@@ -176,19 +182,21 @@ LIBTOOLS = xymonloadhosts xymonstackio xymonavailability xymonlocator
 install-tools: $(LIBTOOLS)
 	@mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
 	for f in $(LIBTOOLS); do \
+		rm -f $(INSTALLROOT)$(INSTALLBINDIR)/$$f; \
 		cp -fp $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
 		chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
 	done
 	@mkdir -p $(INSTALLROOT)$(MANROOT)/man1
+	rm -f $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
 	cp -fp xymontools.1 $(INSTALLROOT)$(MANROOT)/man1/
 	chmod 644 $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
 ifndef PKGBUILD
 	for f in $(LIBTOOLS); do \
-		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
-		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+		chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+		chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
 	done
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
 endif
 
 clean:

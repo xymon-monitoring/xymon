@@ -196,12 +196,12 @@ endif
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 
 install-cfg:
-	cd etcfiles; ../../build/merge-lines xymonserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg LARRDCOLUMN=TRENDSCOLUMN LARRDS=TEST2RRD
-	cd etcfiles; ../../build/merge-lines cgioptions.cfg $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg
-	cd etcfiles; ../../build/merge-sects tasks.cfg $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg larrdstatus=rrdstatus larrddata=rrddata
-	cd etcfiles; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
-	cd etcfiles; ../../build/merge-sects graphs.cfg $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg
-	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg; fi; ../../build/merge-lines xymonserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg LARRDCOLUMN=TRENDSCOLUMN LARRDS=TEST2RRD
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg; fi; ../../build/merge-lines cgioptions.cfg $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg; fi; ../../build/merge-sects tasks.cfg $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg larrdstatus=rrdstatus larrddata=rrddata
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg; fi; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg; fi; ../../build/merge-sects graphs.cfg $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv; fi; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
 	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/ ../../build/md5.dat
