@@ -229,6 +229,9 @@ ifndef PKGBUILD
 	chmod 664 $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
 
 	chown -h root $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || echo "Could not make xymonping owned by root, continuing"
-	chmod 4755 $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || echo "Could not make xymonping suid-root, continuing"
+	# chmod has no portable -h and this sets the setuid bit, so never run it on a
+	# symlink left at the name (xymonnet installs the real binary, in a separate
+	# target that need not run first): skip it when the name is a symlink.
+	test -L $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || chmod 4755 $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || echo "Could not make xymonping suid-root, continuing"
 endif
 

@@ -79,6 +79,23 @@ EOF
 done
 [ -z "$cm" ] || fail "a chmod on a \$(XYMONVAR) subdirectory is not guarded by 'test -L ... ||', so a relocation symlink there is followed to its target's mode:$cm"
 
+# A setuid/setgid chmod (mode 2xxx/4xxx/6xxx) on an installed name is the worst
+# to follow -- it would make a symlink's target setuid/setgid-root. It must be
+# "test -L ... ||" guarded.
+su=""
+for f in $MAKEFILES; do
+	[ -f "$ROOT/$f" ] || continue
+	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod [2467][0-7][0-7][0-7] .*INSTALLROOT" || true)
+	[ -z "$lines" ] || while IFS= read -r l; do
+		[ -n "$l" ] || continue
+		case $l in *"test -L"*) ;; *) su="$su
+$f: ${l#*:}" ;; esac
+	done <<EOF
+$lines
+EOF
+done
+[ -z "$su" ] || fail "a setuid/setgid chmod on an installed name is not guarded by 'test -L ... ||', so a symlink there would have its target made setuid-root:$su"
+
 # A "cp -fp ... $(INSTALLROOT)..." copies into a directory $(XYMONUSER) owns, so
 # a symlink at the destination name would be written through. Each such line
 # must drop the name first: a "rm -f" on the same line or the line before it
