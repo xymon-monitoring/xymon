@@ -310,8 +310,8 @@ install-servermsg:
 install-dirs:
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR))
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
 	chmod 755 $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
 endif
 
@@ -321,8 +321,8 @@ ifneq ($(INSTALLBINDIR),$(XYMONHOME)/bin)
 	ln -s $(INSTALLBINDIR) $(INSTALLROOT)$(XYMONHOME)/bin || true
 endif
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)
 	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)
 endif
 
@@ -332,8 +332,8 @@ ifneq ($(INSTALLETCDIR),$(XYMONHOME)/etc)
 	ln -s $(INSTALLETCDIR) $(INSTALLROOT)$(XYMONHOME)/etc || true
 endif
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)
 	chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)
 endif
 
@@ -343,8 +343,8 @@ ifneq ($(INSTALLEXTDIR),$(XYMONHOME)/ext)
 	ln -s $(INSTALLEXTDIR) $(INSTALLROOT)$(XYMONHOME)/ext || true
 endif
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLEXTDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLEXTDIR)
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLEXTDIR)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLEXTDIR)
 	chmod 755 $(INSTALLROOT)$(INSTALLEXTDIR)
 endif
 
@@ -354,8 +354,8 @@ ifneq ($(INSTALLTMPDIR),$(XYMONHOME)/tmp)
 	ln -s $(INSTALLTMPDIR) $(INSTALLROOT)$(XYMONHOME)/tmp || true
 endif
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLTMPDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLTMPDIR)
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLTMPDIR)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLTMPDIR)
 	chmod 755 $(INSTALLROOT)$(INSTALLTMPDIR)
 endif
 
@@ -365,8 +365,8 @@ ifneq ($(INSTALLWEBDIR),$(XYMONHOME)/web)
 	ln -s $(INSTALLWEBDIR) $(INSTALLROOT)$(XYMONHOME)/web || true
 endif
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLWEBDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLWEBDIR)
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLWEBDIR)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLWEBDIR)
 	chmod 755 $(INSTALLROOT)$(INSTALLWEBDIR)
 endif
 
@@ -387,69 +387,69 @@ ifneq ($(INSTALLWWWDIR),$(XYMONHOME)/www)
 	ln -s $(INSTALLWWWDIR) $(INSTALLROOT)$(XYMONHOME)/www || true
 endif
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
-	chgrp `$(IDTOOL) -g $(XYMONUSER)`  $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)`  $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 	chmod 755  $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 ifdef HTTPDGID
 # The www/rep and www/snap directories must be writable by the apache daemon
-	chgrp $(HTTPDGID) $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
+	chgrp -h $(HTTPDGID) $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 endif
 	chmod g+w $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/acks)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/acks
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/acks
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/acks
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/acks
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/acks
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/data)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/data
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/data
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/data
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/data
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/data
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/disabled)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/disabled
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/disabled
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/disabled
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/disabled
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/disabled
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/hist)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/hist
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/hist
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/hist
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/hist
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/hist
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/histlogs)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/histlogs || echo "Warning: Could not set owner on the histlogs directory"
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/histlogs || echo "Warning: Could not set group on the histlogs directory"
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/histlogs || echo "Warning: Could not set owner on the histlogs directory"
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/histlogs || echo "Warning: Could not set group on the histlogs directory"
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/histlogs
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/hostdata)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/hostdata || echo "Warning: Could not set owner on the hostdata directory"
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/hostdata || echo "Warning: Could not set group on the hostdata directory"
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/hostdata || echo "Warning: Could not set owner on the hostdata directory"
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/hostdata || echo "Warning: Could not set group on the hostdata directory"
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/hostdata
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/logs)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/logs
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/logs
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/logs
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/logs
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/logs
 endif
 
 	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/rrd)
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/rrd
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/rrd
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/rrd
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/rrd
 	chmod 755 $(INSTALLROOT)$(XYMONVAR)/rrd
 endif
 
@@ -602,7 +602,7 @@ client-install: install-client
 CLIENTDIRS = etc:$(INSTALLCLIENTETCDIR) bin:$(INSTALLCLIENTBINDIR) tmp:$(INSTALLCLIENTTMPDIR) logs:$(INSTALLCLIENTLOGDIR)
 CLIENTDIR_DEFAULT = { test "$$to" = "$(CLIENTHOME)/$$d" || { test -d $(INSTALLROOT)$$to && test -d $$old && here=`cd $(INSTALLROOT)$$to >/dev/null && pwd -P` && test -n "$$here" && test "$$here" = "`cd $$old >/dev/null && pwd -P`"; }; }
 ifndef PKGBUILD
-CLIENTDIR_OWN = chown $(XYMONUSER) $(INSTALLROOT)$$to && chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$$to || exit 1;
+CLIENTDIR_OWN = chown -h $(XYMONUSER) $(INSTALLROOT)$$to && chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$$to || exit 1;
 endif
 
 install-clientdirs:

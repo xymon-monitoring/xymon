@@ -1,0 +1,9 @@
+client, server -- install replaces a name rather than following a symlink
+-------------------------------------------------------------------------
+
+make install and make install-client copy files and set ownership in
+directories that may already hold a symlink at an installed name, such as one
+left by a relocated install directory. The install now removes each name
+before copying, so a symlink there is replaced rather than written through,
+and uses chown -h so ownership is set on the link and not the file it points
+to. No change in a default layout.

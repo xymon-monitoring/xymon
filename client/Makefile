@@ -102,7 +102,13 @@ install:
 	if test ! -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/ ; chmod 644 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/localclient.cfg; fi
 	if test ! -f $(INSTALLROOT)$(XYMONHOME)/local/README; then cp README-local $(INSTALLROOT)$(XYMONHOME)/local/README ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/local/README; fi
 	chmod 755 runclient.sh $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS)
+	# Remove each destination name before copying: an earlier install, or #411's
+	# relocation, may have left a symlink at the name, and cp -fp would write
+	# through it to the file it points to. rm -f removes a symlink (never the file
+	# it points to, never a real file's content); cp then creates a fresh file.
+	rm -f $(INSTALLROOT)$(XYMONHOME)/runclient.sh
 	cp -fp runclient.sh $(INSTALLROOT)$(XYMONHOME)
+	for f in $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS); do rm -f $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f; done
 	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/
 
 	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg
@@ -125,21 +131,22 @@ ifndef PKGBUILD
 	# nothing else is ours to touch. A no-op in the default layout, where the
 	# recursion already covered them.
 	for f in $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS); do \
-		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f ; \
-		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f ; \
+		chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f ; \
+		chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f ; \
 	done
 	for f in localclient.cfg clientlaunch.cfg xymonclient.cfg clientlaunch.d xymonclient.d; do \
-		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$f ; \
-		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$f ; \
+		chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$f ; \
+		chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$f ; \
 	done
 endif
 
 install-localclient:
 	chmod 755 xymond_client
+	rm -f $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/xymond_client
 	cp -fp xymond_client $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/xymond_client
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/xymond_client
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/xymond_client
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/xymond_client
 endif
 
 clean:
