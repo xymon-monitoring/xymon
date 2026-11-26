@@ -61,14 +61,16 @@ EOF
 done
 [ -z "$tf" ] || fail "a 'test ! -f ... cp' line in an install makefile does not drop a symlink at the name first (test -L ...; rm -f), so a symlink there is followed:$tf"
 
-# chmod has no portable -h. A chmod on a $(XYMONVAR) subdirectory -- which
-# $(XYMONUSER) owns and may relocate with a symlink -- must be guarded by
-# "test -L ... ||" so it skips a symlink rather than following it to the
-# target's mode.
+# chmod has no portable -h. A chmod on an install directory $(XYMONUSER) owns --
+# a $(XYMONVAR) data subdir, one of the top install dirs (bin/etc/ext/tmp/web/
+# www and $(XYMONHOME)/download), a log/run dir, or a drop-in .d dir -- must be
+# guarded by "test -L ... ||" so it skips a symlink rather than following it to
+# the target's mode. (A chmod on a file name under such a dir, e.g. .../foo.cfg,
+# is covered instead by its cp/rm-f or test-L drop and is not matched here.)
 cm=""
 for f in $MAKEFILES; do
 	[ -f "$ROOT/$f" ] || continue
-	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod .*XYMONVAR\)/" || true)
+	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod .*(XYMONVAR\)/|INSTALL[A-Z]+DIR\)( |;|\$)|/tasks\.d|\\\$\\\$[a-z]|XYMONLOGDIR\)|XYMONRUNDIR\)|XYMONHOME\)/download)" || true)
 	[ -z "$lines" ] || while IFS= read -r l; do
 		[ -n "$l" ] || continue
 		case $l in *"test -L"*) ;; *) cm="$cm
@@ -77,7 +79,7 @@ $f: ${l#*:}" ;; esac
 $lines
 EOF
 done
-[ -z "$cm" ] || fail "a chmod on a \$(XYMONVAR) subdirectory is not guarded by 'test -L ... ||', so a relocation symlink there is followed to its target's mode:$cm"
+[ -z "$cm" ] || fail "a chmod on a \$(XYMONUSER)-owned install directory is not guarded by 'test -L ... ||', so a symlink there is followed to its target's mode:$cm"
 
 # A setuid/setgid chmod (mode 2xxx/4xxx/6xxx) on an installed name is the worst
 # to follow -- it would make a symlink's target setuid/setgid-root. It must be

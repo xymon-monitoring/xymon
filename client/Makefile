@@ -89,16 +89,16 @@ INSTALLCLIENTLOGDIR = $(XYMONHOME)/logs
 endif
 
 install:
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)       ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)       ; chmod 755 $(INSTALLROOT)$(XYMONHOME)      ; fi
-	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTBINDIR)   ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTBINDIR)   ; chmod 755 $(INSTALLROOT)$(INSTALLCLIENTBINDIR)  ; fi
-	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTETCDIR)   ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTETCDIR)   ; chmod 755 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)  ; fi
-	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTTMPDIR)   ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTTMPDIR)   ; chmod 755 $(INSTALLROOT)$(INSTALLCLIENTTMPDIR)  ; fi
-	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)  ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)  ; chmod 755 $(INSTALLROOT)$(INSTALLCLIENTLOGDIR) ; fi
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)/ext   ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/ext   ; chmod 755 $(INSTALLROOT)$(XYMONHOME)/ext  ; fi
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)/local ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/local ; chmod 755 $(INSTALLROOT)$(XYMONHOME)/local; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)       ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)       ; test -L $(INSTALLROOT)$(XYMONHOME) || chmod 755 $(INSTALLROOT)$(XYMONHOME)      ; fi
+	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTBINDIR)   ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTBINDIR)   ; test -L $(INSTALLROOT)$(INSTALLCLIENTBINDIR) || chmod 755 $(INSTALLROOT)$(INSTALLCLIENTBINDIR)  ; fi
+	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTETCDIR)   ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTETCDIR)   ; test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR) || chmod 755 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)  ; fi
+	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTTMPDIR)   ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTTMPDIR)   ; test -L $(INSTALLROOT)$(INSTALLCLIENTTMPDIR) || chmod 755 $(INSTALLROOT)$(INSTALLCLIENTTMPDIR)  ; fi
+	if test ! -d $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)  ; then mkdir -p $(INSTALLROOT)$(INSTALLCLIENTLOGDIR)  ; test -L $(INSTALLROOT)$(INSTALLCLIENTLOGDIR) || chmod 755 $(INSTALLROOT)$(INSTALLCLIENTLOGDIR) ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/ext   ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/ext   ; test -L $(INSTALLROOT)$(XYMONHOME)/ext || chmod 755 $(INSTALLROOT)$(XYMONHOME)/ext  ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/local ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/local ; test -L $(INSTALLROOT)$(XYMONHOME)/local || chmod 755 $(INSTALLROOT)$(XYMONHOME)/local; fi
 	# The drop-in directories clientlaunch.cfg and xymonclient.cfg include,
 	# made here as xymond/Makefile makes the server's own.
-	for d in clientlaunch.d xymonclient.d; do mkdir -p $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; chmod 755 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; done
+	for d in clientlaunch.d xymonclient.d; do mkdir -p $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d || chmod 755 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/$$d; done
 	# These install a default only when the name is absent, to keep an admin's
 	# edited copy on reinstall. A symlink left at the name would make "test ! -f"
 	# follow it and cp write through it, so remove a symlink there first.
