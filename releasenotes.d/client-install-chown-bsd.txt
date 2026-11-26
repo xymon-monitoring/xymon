@@ -1,0 +1,8 @@
+client -- make install no longer aborts on the BSDs
+---------------------------------------------------
+
+The client install set ownership of its tree with "chown -hR", which the
+BSDs reject ("the -R and -h options may not be specified together"), so
+make install aborted there. It now recurses with find instead, which is
+portable and keeps the same behaviour: a relocated bin or etc symlink is
+not followed. Other platforms are unaffected.
