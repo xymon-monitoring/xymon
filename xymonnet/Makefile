@@ -142,7 +142,7 @@ install-config:
 	# (to merge in new sections) following a symlink there, copying the link's
 	# target into the .bak; it unlinks the name before writing, so the write does
 	# not follow. Drop a symlink here so the read does not either.
-	if test -L $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; fi; ../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	if test -L $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; then if test -f $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg; fi; ../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 ifndef PKGBUILD
 	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg

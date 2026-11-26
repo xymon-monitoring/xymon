@@ -114,8 +114,8 @@ install:
 	for f in $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS); do rm -f $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/$$f; done
 	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(INSTALLCLIENTBINDIR)/
 
-	if test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg; then rm -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg; fi; ../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg
-	if test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; then rm -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; fi; ../build/merge-lines xymonclient.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg
+	if test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg; then if test -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg; fi; ../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg
+	if test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; then if test -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; fi; ../build/merge-lines xymonclient.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg
 	chmod 644 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg
 
 ifndef PKGBUILD

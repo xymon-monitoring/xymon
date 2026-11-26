@@ -196,12 +196,12 @@ endif
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
 
 install-cfg:
-	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg; fi; ../../build/merge-lines xymonserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg LARRDCOLUMN=TRENDSCOLUMN LARRDS=TEST2RRD
-	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg; fi; ../../build/merge-lines cgioptions.cfg $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg
-	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg; fi; ../../build/merge-sects tasks.cfg $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg larrdstatus=rrdstatus larrddata=rrddata
-	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg; fi; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
-	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg; fi; ../../build/merge-sects graphs.cfg $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg
-	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv; then rm -f $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv; fi; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg; then if test -f $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg; fi; ../../build/merge-lines xymonserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg LARRDCOLUMN=TRENDSCOLUMN LARRDS=TEST2RRD
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg; then if test -f $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg; fi; ../../build/merge-lines cgioptions.cfg $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg; then if test -f $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg; fi; ../../build/merge-sects tasks.cfg $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg larrdstatus=rrdstatus larrddata=rrddata
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg; then if test -f $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg; fi; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg; then if test -f $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg; fi; ../../build/merge-sects graphs.cfg $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg
+	cd etcfiles; if test -L $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv; then if test -f $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv; fi; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
 	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/ ../../build/md5.dat
@@ -210,15 +210,23 @@ install-cfg:
 	# symlink them to persistent storage, so do not remove a symlink here. touch
 	# ensures they exist; skip the chmod when the name is a symlink rather than
 	# follow it to set the target's mode.
-	touch $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
-	for c in $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak; do test -L $$c || chmod 664 $$c || exit 1; done
+	for c in $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak; do if test ! -L $$c; then touch $$c && chmod 664 $$c || exit 1; fi; done
 	mkdir -p $(INSTALLROOT)$(XYMONLOGDIR); test -L $(INSTALLROOT)$(XYMONLOGDIR) || chmod 755 $(INSTALLROOT)$(XYMONLOGDIR)
 	mkdir -p $(INSTALLROOT)$(XYMONRUNDIR); test -L $(INSTALLROOT)$(XYMONRUNDIR) || chmod 755 $(INSTALLROOT)$(XYMONRUNDIR)
 	mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d; test -L $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d || chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d
 	for d in alerts.d analysis.d combo.d graphs.d client-local.d rrddefinitions.d hosts.d xymonserver.d; do mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)/$$d; test -L $(INSTALLROOT)$(INSTALLETCDIR)/$$d || chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)/$$d || exit 1; done
 ifndef PKGBUILD
-	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONRUNDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(XYMONVAR) $(INSTALLROOT)$(XYMONVAR)/*
-	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONRUNDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(XYMONVAR) $(INSTALLROOT)$(XYMONVAR)/*
+	chown -h $(XYMONUSER) $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONRUNDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(XYMONVAR)
+	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONRUNDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(XYMONVAR)
+	# chown -h protects only the final component, so a glob "$(INSTALLBINDIR)/*"
+	# would follow a symlink $(XYMONUSER) may have left at bin/etc/web/... to
+	# its target and re-own the files there. find given a directory as its start
+	# path acts on a symlink at that path without descending it, so recurse each
+	# of these directories rather than glob into it.
+	for d in $(INSTALLROOT)$(INSTALLBINDIR) $(INSTALLROOT)$(INSTALLETCDIR) $(INSTALLROOT)$(INSTALLWEBDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(XYMONVAR); do \
+		find $$d -exec chown -h $(XYMONUSER) {} \; ; \
+		find $$d -exec chgrp -h `$(IDTOOL) -g $(XYMONUSER)` {} \; ; \
+	done
 	# ext/ holds the network-test helpers; a server built without xymonnet
 	# leaves it empty, and a bare "$(INSTALLEXTDIR)/*" then reaches chown -h as a
 	# literal unmatched path and fails the install. Recurse over the directory,
