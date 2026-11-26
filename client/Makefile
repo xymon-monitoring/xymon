@@ -110,14 +110,17 @@ install:
 	chmod 644 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg
 
 ifndef PKGBUILD
-	chown -hR $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME)
-	chgrp -hR `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONHOME)
+	# Own the tree with find, not chown -hR: the BSDs reject -h together with
+	# -R, and a plain -R would, on Solaris, AIX and HP-UX, change the directory
+	# a relocated bin or etc symlink points to. find walks without following a
+	# symlink, and chown -h on each entry acts on the link, not its target.
+	find $(INSTALLROOT)$(XYMONHOME) -exec chown -h $(XYMONUSER) {} \;
+	find $(INSTALLROOT)$(XYMONHOME) -exec chgrp -h `$(IDTOOL) -g $(XYMONUSER)` {} \;
 	chmod 755 $(INSTALLROOT)$(XYMONHOME)
-	# The recursive chown above stops at XYMONHOME: -h, because without it
-	# Solaris, AIX and HP-UX change the directory a link points to. So a
-	# relocated bin or etc is outside it: the tools keep whatever ownership cp
-	# preserved, and the config files and drop-in directories are created
-	# here and stay root's. Named one by one rather than chowned recursively -
+	# A relocated bin or etc is outside XYMONHOME: the tools keep whatever
+	# ownership cp preserved, and the config files and drop-in directories are
+	# created here and stay root's. Named one by one rather than chowned
+	# recursively -
 	# a relocated etc may be shared with the rest of the system, where
 	# nothing else is ours to touch. A no-op in the default layout, where the
 	# recursion already covered them.
