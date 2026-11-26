@@ -116,7 +116,7 @@ install:
 
 	if test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg; then if test -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg; fi; ../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg
 	if test -L $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; then if test -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; then exit 0; fi; rm -f $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; fi; ../build/merge-lines xymonclient.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg
-	chmod 644 $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg
+	for c in $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/clientlaunch.cfg $(INSTALLROOT)$(INSTALLCLIENTETCDIR)/xymonclient.cfg; do test -L $$c || chmod 644 $$c || exit 1; done
 
 ifndef PKGBUILD
 	# Own the tree with find, not chown -hR: the BSDs reject -h together with

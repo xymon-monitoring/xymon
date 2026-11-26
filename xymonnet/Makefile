@@ -146,7 +146,7 @@ install-config:
 ifndef PKGBUILD
 	chown -h $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 	chgrp -h `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-	chmod 644 $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	test -L $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg || chmod 644 $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 endif
 
 install-man:

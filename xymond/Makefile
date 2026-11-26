@@ -224,8 +224,8 @@ ifndef PKGBUILD
 	# path acts on a symlink at that path without descending it, so recurse each
 	# of these directories rather than glob into it.
 	for d in $(INSTALLROOT)$(INSTALLBINDIR) $(INSTALLROOT)$(INSTALLETCDIR) $(INSTALLROOT)$(INSTALLWEBDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(XYMONVAR); do \
-		find $$d -exec chown -h $(XYMONUSER) {} \; ; \
-		find $$d -exec chgrp -h `$(IDTOOL) -g $(XYMONUSER)` {} \; ; \
+		find $$d -exec chown -h $(XYMONUSER) {} \; || exit 1 ; \
+		find $$d -exec chgrp -h `$(IDTOOL) -g $(XYMONUSER)` {} \; || exit 1 ; \
 	done
 	# ext/ holds the network-test helpers; a server built without xymonnet
 	# leaves it empty, and a bare "$(INSTALLEXTDIR)/*" then reaches chown -h as a
