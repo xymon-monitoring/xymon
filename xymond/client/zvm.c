@@ -18,7 +18,7 @@ static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
                      char *cpuutilstr, char *uptimestr)
 {
         char *p;
-        float load1, loadyellow, loadred;
+        float load1 = 0.0, loadyellow, loadred;
         int recentlimit, ancientlimit, uptimecolor, maxclockdiff, clockdiffcolor;
         int  uphour, upmin;
         char loadresult[100];
@@ -42,20 +42,22 @@ static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
          * z/VM: "Uptime: 1 Days, 13 Hours, 38 Minutes"
          */
 
-	sscanf(uptimestr,"Uptime: %ld Days, %d Hours, %d Minutes", &upday, &uphour, &upmin);
-        uptimesecs = upday * 86400;
-        uptimesecs += 60*(60*uphour + upmin);
-        sprintf(myupstr, "%s\n", uptimestr);
+	if (sscanf(uptimestr,"Uptime: %ld Days, %d Hours, %d Minutes", &upday, &uphour, &upmin) == 3) {
+		uptimesecs = upday * 86400;
+		uptimesecs += 60*(60*uphour + upmin);
+	}
+	else uptimesecs = -1;
+        snprintf(myupstr, sizeof(myupstr), "%s\n", uptimestr);
 
         /*
          *  Looking for average CPU Utilization in 'IND' command response
          *  AVGPROC-000% 
          */
         *loadresult = '\0';
-        p = strstr(cpuutilstr, "AVGPROC-") + 8 ;
+        p = strstr(cpuutilstr, "AVGPROC-"); if (p) p += 8;
         if (p) {
                 if (sscanf(p, "%f%%", &load1) == 1) {
-                        sprintf(loadresult, "z/VM CPU Utilization %3.0f%%\n", load1);
+                        snprintf(loadresult, sizeof(loadresult), "z/VM CPU Utilization %3.0f%%\n", load1);
                 }
         }
 
@@ -74,23 +76,24 @@ static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
         if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
                 if (cpucolor != COL_RED) cpucolor = uptimecolor;
-                sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+                snprintf(msgline, sizeof(msgline), "&%s Machine recently rebooted\n", colorname(uptimecolor));
                 addtobuffer(upmsg, msgline);
         }
         if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
                 if (cpucolor != COL_RED) cpucolor = uptimecolor;
-                sprintf(msgline, "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
+                snprintf(msgline, sizeof(msgline), "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
                 addtobuffer(upmsg, msgline);
         }
 
         init_status(cpucolor);
-        sprintf(msgline, "status %s.cpu %s %s %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.cpu %s %s %s %s ",
                 commafy(hostname), colorname(cpucolor),
                 (timestr ? timestr : "<no timestamp data>"),
                 loadresult,
-		myupstr,
-		cpuutilstr); 
+		myupstr);
         addtostatus(msgline);
+        addtostatus(cpuutilstr);
+        addtostatus("\n");
         if (STRBUFLEN(upmsg)) {
                 addtostrstatus(upmsg);
                 addtostatus("\n");
@@ -106,7 +109,7 @@ static void zvm_paging_report(char *hostname, char *clientclass, enum ostype_t o
                      void *hinfo, char *fromline, char *timestr, char *cpuutilstr)
 {
         char *p;
-        int pagerate, pagingyellow, pagingred;
+        int pagerate = 0, pagingyellow, pagingred;
         char pagingresult[100];
 
         int pagingcolor = COL_GREEN;
@@ -120,9 +123,9 @@ static void zvm_paging_report(char *hostname, char *clientclass, enum ostype_t o
          */
         *pagingresult = '\0';
 	/*  Skip past three newlines in message to the PAGING text  */
-	p=strstr(cpuutilstr,"PAGING-") + 7;
-	if (sscanf(p, "%d/SEC", &pagerate) == 1) {
-               	sprintf(pagingresult, "z/VM Paging Rate %d per second\n", pagerate);
+	p = strstr(cpuutilstr,"PAGING-"); if (p) p += 7;
+	if (p && (sscanf(p, "%d/SEC", &pagerate) == 1)) {
+		snprintf(pagingresult, sizeof(pagingresult), "z/VM Paging Rate %d per second\n", pagerate);
         }
 
         get_paging_thresholds(hinfo, clientclass, &pagingyellow, &pagingred);
@@ -139,12 +142,13 @@ static void zvm_paging_report(char *hostname, char *clientclass, enum ostype_t o
         }
 
         init_status(pagingcolor);
-        sprintf(msgline, "status %s.paging %s %s %s %s\n",
+        snprintf(msgline, sizeof(msgline), "status %s.paging %s %s %s ",
                 commafy(hostname), colorname(pagingcolor),
                 (timestr ? timestr : "<no timestamp data>"),
-                pagingresult,
-                cpuutilstr);
+                pagingresult);
         addtostatus(msgline);
+        addtostatus(cpuutilstr);
+        addtostatus("\n");
         if (STRBUFLEN(upmsg)) {
                 addtostrstatus(upmsg);
                 addtostatus("\n");
@@ -160,7 +164,7 @@ static void zvm_mdc_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr, char *cpuutilstr)
 {
         char *p;
-        int mdcreads, mdcwrites, mdchitpct;
+        int mdcreads = 0, mdcwrites = 0, mdchitpct = 0;
         char mdcresult[100];
 
         char msgline[256];
@@ -179,12 +183,12 @@ static void zvm_mdc_report(char *hostname, char *clientclass, enum ostype_t os,
         if (p) {
 		p += 6;
         	sscanf(p, "%d/SEC", &mdcreads);
-        	p=strstr(cpuutilstr,"WRITES-") + 7;
-        	sscanf(p, "%d/SEC", &mdcwrites);
-        	p=strstr(cpuutilstr,"RATIO-") + 6;
-        	sscanf(p, "%d", &mdchitpct);
+		p = strstr(cpuutilstr,"WRITES-"); if (p) p += 7;
+		if (p) sscanf(p, "%d/SEC", &mdcwrites);
+		p = strstr(cpuutilstr,"RATIO-"); if (p) p += 6;
+		if (p) sscanf(p, "%d", &mdchitpct);
 
-	        sprintf(msgline, "data %s.mdc\n%s\n%d:%d:%d\n", commafy(hostname), osname(os), mdcreads, mdcwrites, mdchitpct);
+	        snprintf(msgline, sizeof(msgline), "data %s.mdc\n%s\n%d:%d:%d\n", commafy(hostname), osname(os), mdcreads, mdcwrites, mdchitpct);
         	addtobuffer(msg, msgline);
 		combo_add(msg);
         }
@@ -214,7 +218,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
         clearalertgroups();
         monmsg = newstrbuffer(0);
 
-        sprintf(msgline, "data %s.proccounts\n", commafy(hostname));
+        snprintf(msgline, sizeof(msgline), "data %s.proccounts\n", commafy(hostname));
         addtobuffer(countdata, msgline);
 
 	cmdofs = 0;   /*  Command offset for z/VM isn't necessary  */
@@ -223,7 +227,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
 
         if (pchecks == 0) {
                 /* Nothing to check */
-                sprintf(msgline, "&%s No process checks defined\n", colorname(noreportcolor));
+                snprintf(msgline, sizeof(msgline), "&%s No process checks defined\n", colorname(noreportcolor));
                 addtobuffer(monmsg, msgline);
                 pscolor = noreportcolor;
         }
@@ -257,21 +261,21 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
                         char limtxt[1024];
 
                         if (pmax == -1) {
-                                if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
-                                else if (pmin == 0) sprintf(limtxt, "none");
+                                if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "%d or more", pmin);
+                                else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "none");
                         }
                         else {
-                                if (pmin > 0) sprintf(limtxt, "between %d and %d", pmin, pmax);
-                                else if (pmin == 0) sprintf(limtxt, "at most %d", pmax);
+                                if (pmin > 0) snprintf(limtxt, sizeof(limtxt), "between %d and %d", pmin, pmax);
+                                else if (pmin == 0) snprintf(limtxt, sizeof(limtxt), "at most %d", pmax);
                         }
 
                         if (pcolor == COL_GREEN) {
-                                sprintf(msgline, "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
+                                snprintf(msgline, sizeof(msgline), "&green %s (found %d, req. %s)\n", pname, pcount, limtxt);
                                 addtobuffer(monmsg, msgline);
                         }
                         else {
                                 if (pcolor > pscolor) pscolor = pcolor;
-                                sprintf(msgline, "&%s %s (found %d, req. %s)\n",
+                                snprintf(msgline, sizeof(msgline), "&%s %s (found %d, req. %s)\n",
                                         colorname(pcolor), pname, pcount, limtxt);
                                 addtobuffer(monmsg, msgline);
                                 addalertgroup(group);
@@ -280,7 +284,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
                         if (ptrack) {
                                 /* Save the count data for later DATA message to track process counts */
                                 if (!pid) pid = "default";
-                                sprintf(msgline, "%s:%u\n", pid, pcount);
+                                snprintf(msgline, sizeof(msgline), "%s:%u\n", pid, pcount);
                                 addtobuffer(countdata, msgline);
                                 anycountdata = 1;
                         }
@@ -288,7 +292,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
         }
         else {
                 pscolor = COL_YELLOW;
-                sprintf(msgline, "&yellow Expected string not found in ps output header\n");
+                snprintf(msgline, sizeof(msgline), "&yellow Expected string not found in ps output header\n");
                 addtobuffer(monmsg, msgline);
         }
 
@@ -296,10 +300,10 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
         init_status(pscolor);
 
         group = getalertgroups();
-        if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+        if (group) snprintf(msgline, sizeof(msgline), "status/group:%s ", group); else strcpy(msgline, "status ");
         addtostatus(msgline);
 
-        sprintf(msgline, "%s.procs %s %s - Processes %s\n",
+        snprintf(msgline, sizeof(msgline), "%s.procs %s %s - Processes %s\n",
                 commafy(hostname), colorname(pscolor),
                 (timestr ? timestr : "<No timestamp data>"),
                 ((pscolor == COL_GREEN) ? "OK" : "NOT ok"));
@@ -317,7 +321,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
                  * Format the list of virtual machines into four per line, 
                  * this list could be fairly long.
                  */
-                char *tmpstr, *tok, *nm[4];
+                char *tmpstr, *tok, *nm[4] = { " ", " ", " ", " " };
 		int nmidx = 0;
 
 		/*  Make a copy of psstr, strtok() will be changing it  */
@@ -330,7 +334,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
                         nm[nmidx++] = tok;
 
 			if (nmidx == 4) {
-				sprintf(msgline, "%-8s %-8s %-8s %-8s\n", nm[0], nm[1], nm[2], nm[3]);
+				snprintf(msgline, sizeof(msgline), "%-8s %-8s %-8s %-8s\n", nm[0], nm[1], nm[2], nm[3]);
 				addtostatus(msgline);
 				nmidx = 0;
 				nm[0] = nm[1] = nm[2] = nm[3] = " ";
@@ -339,7 +343,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
 		}
 		/*  Print any remaining names  */
 		if (nmidx > 0) {
-			sprintf(msgline, "%-8s %-8s %-8s %-8s\n", nm[0], nm[1], nm[2], nm[3]);
+			snprintf(msgline, sizeof(msgline), "%-8s %-8s %-8s %-8s\n", nm[0], nm[1], nm[2], nm[3]);
 			addtostatus(msgline);
 		}
 
@@ -371,7 +375,7 @@ void handle_zvm_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	char fromline[1024];
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	splitmsg(clientdata);
 
