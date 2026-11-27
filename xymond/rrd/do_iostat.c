@@ -198,7 +198,8 @@ int do_iostat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 
 			  case S_DATA:
 				buf = xstrdup(curline);
-				if (sscanf(buf, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %s",
+				/* %16383s: marker[] is MAX_LINE_LEN (16384) bytes, see lib/stackio.h */
+				if (sscanf(buf, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %16383s",
 					   &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6],
 					   &v[7], &v[8], &v[9], &v[10], &v[11], &v[12], &v[13], marker) == 15) {
 

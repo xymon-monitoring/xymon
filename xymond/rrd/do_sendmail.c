@@ -83,7 +83,7 @@ int do_sendmail_rrd(char *hostname, char *testname, char *classname, char *pagep
 			*eoln = '\0';
 
 			/* First try for sendmail 8.13.x format */
-			found = sscanf(bofdata, "%*s %lu %luK %lu %luK %lu %lu %lu %s",
+			found = sscanf(bofdata, "%*s %lu %luK %lu %luK %lu %lu %lu %1023s",
 					&msgsfr, &bytesfr, &msgsto, &bytesto, &msgsrej, &msgsdis, &msgsqur, mailer);
 			if (found == 8) {
 				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lu:%lu:%lu:%lu:%lu:%lu:%lu",
@@ -93,7 +93,7 @@ int do_sendmail_rrd(char *hostname, char *testname, char *classname, char *pagep
 			}
 
 			/* Next sendmail 8.10.x - without msgsqur */
-			found = sscanf(bofdata, "%*s %lu %luK %lu %luK %lu %lu %s",
+			found = sscanf(bofdata, "%*s %lu %luK %lu %luK %lu %lu %1023s",
 					&msgsfr, &bytesfr, &msgsto, &bytesto, &msgsrej, &msgsdis, mailer);
 			if (found == 7) {
 				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lu:%lu:%lu:%lu:%lu:%lu:U",
@@ -102,7 +102,7 @@ int do_sendmail_rrd(char *hostname, char *testname, char *classname, char *pagep
 			}
 
 			/* Last resort: Sendmail prior to 8.10 - without msgsrej, msgsdis, msgsqur */
-			found = sscanf(bofdata, "%*s %lu %luK %lu %luK %s",
+			found = sscanf(bofdata, "%*s %lu %luK %lu %luK %1023s",
 					&msgsfr, &bytesfr, &msgsto, &bytesto, mailer);
 			if (found == 5) {
 				snprintf(rrdvalues, sizeof(rrdvalues), "%d:%lu:%lu:%lu:%lu:U:U:U",
