@@ -453,6 +453,20 @@ check_cleanup_fn() {
 
 for f in $files; do check_cleanup_fn "$f" "$work/violations"; done
 
+# configure stops at its GNU make check before any probe: a test that runs it
+# calls configure_make first, which hands it gmake on the BSDs and skips where
+# there is none, instead of failing for a reason it is not about (#1043).
+# check_configure_make FILE OUT -- append this file's violation to OUT.
+check_configure_make() {
+	local f=$1 out=$2
+	grep -vE '^[[:space:]]*#' "$f" 2>/dev/null | grep -qE '\./configure' || return 0
+	grep -qE '^[[:space:]]*configure_make([[:space:]]|$)' "$f" && return 0
+	printf 'configure-make\t%s\t%s\n' "${f#"$ROOT"/}" \
+		"runs configure without configure_make first; without GNU make it fails instead of skipping (#1043)" >>"$out"
+}
+
+for f in $files; do check_configure_make "$f" "$work/violations"; done
+
 # A script of the tree run as a command needs its #! to resolve, and bash is
 # /usr/local/bin/bash on the BSDs: updmanver-every-page.sh ran build/updmanver
 # for its #!/bin/bash and failed on every FreeBSD lane with "bad interpreter".
@@ -599,6 +613,21 @@ assert_equal "1" "$(wc -l <"$work/cleanup-violations" | tr -d " ")" \
 	"the cleanup-function rule should report the one function that kills without waiting, and only it"
 assert_contains "stop_bare()" "$(cat "$work/cleanup-violations")" \
 	"the cleanup-function rule reported the wrong function"
+
+# The configure-make rule the same way: a test running configure without
+# configure_make is reported; one calling it, or only naming configure in a
+# comment, is not.
+: >"$work/cm-violations"
+printf '#!/usr/bin/env bash\n./configure --server </dev/null\n' >"$work/cm-bare.sh"
+printf '#!/usr/bin/env bash\nconfigure_make\n./configure --server </dev/null\n' >"$work/cm-ok.sh"
+printf '#!/usr/bin/env bash\n# runs ./configure elsewhere\n' >"$work/cm-comment.sh"
+for f in "$work"/cm-bare.sh "$work"/cm-ok.sh "$work"/cm-comment.sh; do
+	check_configure_make "$f" "$work/cm-violations"
+done
+assert_equal "1" "$(wc -l <"$work/cm-violations" | tr -d " ")" \
+	"the configure-make rule should report the one test running configure without configure_make, and only it"
+assert_contains "cm-bare.sh" "$(cat "$work/cm-violations")" \
+	"the configure-make rule reported the wrong test"
 
 # The link-flags rule the same way, including the bypass it used to allow: the
 # helpers named in a comment and nowhere else.
