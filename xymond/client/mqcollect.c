@@ -23,9 +23,9 @@ void mqcollect_flush_status(int color, char *fromline, time_t timestamp,
 	/* Generate the status message */
 	groups = getalertgroups();
 	init_status(color);
-	if (groups) sprintf(msgline, "status/group:%s ", groups); else strcpy(msgline, "status ");
+	if (groups) snprintf(msgline, sizeof(msgline), "status/group:%s ", groups); else strcpy(msgline, "status ");
 	addtostatus(msgline);
-	sprintf(msgline, "%s.mq %s %s\n", 
+	snprintf(msgline, sizeof(msgline), "%s.mq %s %s\n",
 		hostname, 
 		colorname(color), ctime(&timestamp));
 	addtostatus(msgline);
@@ -62,7 +62,7 @@ void handle_mqcollect_client(char *hostname, char *clienttype, enum ostype_t os,
 	enum { PARSING_QL, PARSING_QS, PARSING_CHS, PARSER_FLOAT } pstate = PARSER_FLOAT;
 	int lastline = 0;
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	bol = strchr(clientdata, '\n'); if (bol) bol++; clienttext = bol;
 	while (bol) {
@@ -90,18 +90,18 @@ void handle_mqcollect_client(char *hostname, char *clienttype, enum ostype_t os,
 
 				if ((critlen != -1) && (qlen >= critlen)) {
 					color = COL_RED;
-					sprintf(msgline, "&red Queue %s:%s has depth %d (critical: %d, warn: %d)\n",
+					snprintf(msgline, sizeof(msgline), "&red Queue %s:%s has depth %d (critical: %d, warn: %d)\n",
 						qmid, qnam, qlen, critlen, warnlen);
 					addtobuffer(redsummary, msgline);
 				}
 				else if ((warnlen != -1) && (qlen >= warnlen)) {
 					if (color < COL_YELLOW) color = COL_YELLOW;
-					sprintf(msgline, "&yellow Queue %s:%s has depth %d (warn: %d, critical: %d)\n",
+					snprintf(msgline, sizeof(msgline), "&yellow Queue %s:%s has depth %d (warn: %d, critical: %d)\n",
 						qmid, qnam, qlen, warnlen, critlen);
 					addtobuffer(yellowsummary, msgline);
 				}
 				else if ((warnlen != -1) || (critlen != -1)) {
-					sprintf(msgline, "&green Queue %s:%s has depth %d (warn: %d, critical: %d)\n",
+					snprintf(msgline, sizeof(msgline), "&green Queue %s:%s has depth %d (warn: %d, critical: %d)\n",
 						qmid, qnam, qlen, warnlen, critlen);
 					addtobuffer(greensummary, msgline);
 				}
@@ -109,18 +109,18 @@ void handle_mqcollect_client(char *hostname, char *clienttype, enum ostype_t os,
 				if ((pstate == PARSING_QS) && (qage >= 0)) {
 					if ((critage != -1) && (qage >= critage)) {
 						color = COL_RED;
-						sprintf(msgline, "&red Queue %s:%s has age %d (critical: %d, warn: %d)\n",
+						snprintf(msgline, sizeof(msgline), "&red Queue %s:%s has age %d (critical: %d, warn: %d)\n",
 								qmid, qnam, qage, critage, warnage);
 						addtobuffer(redsummary, msgline);
 					}
 					else if ((warnage != -1) && (qage >= warnage)) {
 						if (color < COL_YELLOW) color = COL_YELLOW;
-						sprintf(msgline, "&yellow Queue %s:%s has age %d (warn: %d, critical: %d)\n",
+						snprintf(msgline, sizeof(msgline), "&yellow Queue %s:%s has age %d (warn: %d, critical: %d)\n",
 								qmid, qnam, qage, warnage, critage);
 						addtobuffer(yellowsummary, msgline);
 					}
 					else if ((warnage != -1) || (critage != -1)) {
-						sprintf(msgline, "&green Queue %s:%s has age %d (warn: %d, critical: %d)\n",
+						snprintf(msgline, sizeof(msgline), "&green Queue %s:%s has age %d (warn: %d, critical: %d)\n",
 								qmid, qnam, qage, warnage, critage);
 						addtobuffer(greensummary, msgline);
 					}
@@ -141,15 +141,15 @@ void handle_mqcollect_client(char *hostname, char *clienttype, enum ostype_t os,
 					if (chncolor > color) color = chncolor;
 					switch (chncolor) {
 						case COL_RED:
-							sprintf(msgline, "&red Channel %s:%s has status %s\n", qmid, chnnam, chnstatus);
+							snprintf(msgline, sizeof(msgline), "&red Channel %s:%s has status %s\n", qmid, chnnam, chnstatus);
 							addtobuffer(redsummary, msgline);
 							break;
 						case COL_YELLOW:
-							sprintf(msgline, "&yellow Channel %s:%s has status %s\n", qmid, chnnam, chnstatus);
+							snprintf(msgline, sizeof(msgline), "&yellow Channel %s:%s has status %s\n", qmid, chnnam, chnstatus);
 							addtobuffer(yellowsummary, msgline);
 							break;
 						case COL_GREEN:
-							sprintf(msgline, "&green Channel %s:%s has status %s\n", qmid, chnnam, chnstatus);
+							snprintf(msgline, sizeof(msgline), "&green Channel %s:%s has status %s\n", qmid, chnnam, chnstatus);
 							addtobuffer(greensummary, msgline);
 							break;
 					}

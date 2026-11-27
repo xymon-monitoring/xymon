@@ -35,7 +35,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	char fromline[1024];
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	splitmsg(clientdata);
 
@@ -222,7 +222,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 
 		if (arraycount > 0) {
 			init_status(color);
-			sprintf(msgline, "status %s.raid %s %s - RAID %s\n\n",
+			snprintf(msgline, sizeof(msgline), "status %s.raid %s %s - RAID %s\n\n",
 				commafy(hostname), colorname(color), 
 				(timestr ? timestr : "<No timestamp data>"),
 				(summary ? summary : "OK"));

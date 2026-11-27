@@ -21,7 +21,7 @@ void handle_generic_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	char fromline[1024];
 
-	sprintf(fromline, "\nStatus message received from %s\n", sender);
+	snprintf(fromline, sizeof(fromline), "\nStatus message received from %s\n", sender);
 
 	splitmsg(clientdata);
 
