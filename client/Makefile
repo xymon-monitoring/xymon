@@ -125,7 +125,7 @@ ifndef PKGBUILD
 	# symlink, and chown -h on each entry acts on the link, not its target.
 	find $(INSTALLROOT)$(XYMONHOME) -exec chown -h $(XYMONUSER) {} \;
 	find $(INSTALLROOT)$(XYMONHOME) -exec chgrp -h `$(IDTOOL) -g $(XYMONUSER)` {} \;
-	chmod 755 $(INSTALLROOT)$(XYMONHOME)
+	test -L $(INSTALLROOT)$(XYMONHOME) || chmod 755 $(INSTALLROOT)$(XYMONHOME)
 	# A relocated bin or etc is outside XYMONHOME: the tools keep whatever
 	# ownership cp preserved, and the config files and drop-in directories are
 	# created here and stay root's. Named one by one rather than chowned

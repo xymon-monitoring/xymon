@@ -70,7 +70,7 @@ done
 cm=""
 for f in $MAKEFILES; do
 	[ -f "$ROOT/$f" ] || continue
-	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod .*(XYMONVAR\)/|INSTALL[A-Z]+DIR\)( |;|\$)|/tasks\.d|\\\$\\\$[a-z]|XYMONLOGDIR\)|XYMONRUNDIR\)|XYMONHOME\)/download)" || true)
+	lines=$(sed "s/#.*//" "$ROOT/$f" | grep -nE "chmod .*(XYMONVAR\)/|INSTALL[A-Z]+DIR\)( |;|\$)|/tasks\.d|\\\$\\\$[a-z]|XYMONLOGDIR\)|XYMONRUNDIR\)|XYMONHOME\)/download|XYMONHOME\)( |;|$))" || true)
 	[ -z "$lines" ] || while IFS= read -r l; do
 		[ -n "$l" ] || continue
 		case $l in *"test -L"*) ;; *) cm="$cm
@@ -108,7 +108,7 @@ for f in $MAKEFILES; do
 	prev=""
 	while IFS= read -r line; do
 		case $line in
-		*"-fp "*INSTALLROOT*)
+		*"-fp "*INSTALLROOT*|*"ln -f "*INSTALLROOT*)
 			case $prev$line in *"rm -f"*) ;; *) co="$co
 $f: $line" ;; esac ;;
 		esac
