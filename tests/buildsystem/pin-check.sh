@@ -45,8 +45,12 @@ g() { git -C "$repo" -c user.name=t -c user.email=t@t -c commit.gpgsign=false "$
 
 mkdir -p "$repo/build" "$repo/src" "$repo/tests/unit"
 cp "$ROOT/build/pin-check.sh" "$repo/build/pin-check.sh"
-printf 'all:\n\t@:\n' >"$repo/Makefile"
+# The build is a no-op until two markers meet in src/proxy.c -- a stand-in for a
+# pair of changes that each compile alone and clash once merged. The failing line
+# names the file the way a compiler does, for build_or_recover to blame.
+printf 'all:\n\t@if grep -q TYPE_A src/proxy.c 2>/dev/null && grep -q TYPE_B src/proxy.c 2>/dev/null; then LC_ALL=C echo "src/proxy.c:2:1: error: TYPE_A and TYPE_B cannot both be present"; exit 1; fi\n' >"$repo/Makefile"
 printf 'broken\n' >"$repo/src/value"
+printf 'h1\nh2\nh3\nh4\nh5\n' >"$repo/src/proxy.c"
 printf '#!/bin/sh\ntest -f src/value\n' >"$repo/tests/unit/existing.sh"
 chmod +x "$repo/tests/unit/existing.sh"
 git init -q "$repo"
@@ -221,4 +225,44 @@ assert_equal "1 " "$got" \
 	"a stale refs/pr/1 took the place of the fetched pull request in the integration"
 g update-ref -d refs/pr/1
 
-pass "pinned, unguarded, adapted and control told apart; dependencies read and applied; integration merges need no identity, and merge the fetched heads whatever else the clone holds"
+# A build break from two pull requests that merge cleanly but do not compile
+# together must not stop the sweep: build_or_recover drops the pair the failing
+# file points at and rebuilds without them, so the rest is still checked.
+
+# indep forks here, touching only src/indep -- never src/proxy.c.
+g checkout -q -b indep main
+printf 'x\n' >"$repo/src/indep"
+g add -A; g commit -q -m indep
+g update-ref refs/remotes/pr/12 indep
+
+# main then moves on in src/proxy.c. indep, forked before that, now differs there
+# though it never touched the file -- so a tip-to-tip blame would wrongly exclude
+# it, and only the merge-base diff keeps it.
+g checkout -q main
+{ echo h1; echo h2; echo h3; echo h4; echo h5; echo h6; } >"$repo/src/proxy.c"
+g add -A; g commit -q -m 'main moves proxy.c'
+
+# typea and typeb fork from the new main and edit src/proxy.c far enough apart to
+# merge; the Makefile fails once both markers are present.
+g checkout -q -b typea main
+{ echo h1; echo TYPE_A; echo h3; echo h4; echo h5; echo h6; } >"$repo/src/proxy.c"
+g add -A; g commit -q -m typea
+g checkout -q -b typeb main
+{ echo h1; echo h2; echo h3; echo TYPE_B; echo h5; echo h6; } >"$repo/src/proxy.c"
+g add -A; g commit -q -m typeb
+g checkout -q main
+g update-ref refs/remotes/pr/10 typea
+g update-ref refs/remotes/pr/11 typeb
+
+out=$(noid --integrate main 10 11 12)
+assert_contains "excluded 10" "$out" \
+	"a pull request in a non-building pair is excluded, not left to break the build"
+assert_contains "excluded 11" "$out" \
+	"both of the pair are excluded -- neither is picked as the correct one"
+assert_contains "proxy.c" "$out" \
+	"the exclusion names the file the build failed on"
+kept=$(printf '%s\n' "$out" | grep -v '^excluded' | tr '\n' ' ')
+assert_equal "12 " "$kept" \
+	"a pull request that only differs in proxy.c because main moved is kept, not blamed"
+
+pass "pinned, unguarded, adapted and control told apart; dependencies read and applied; integration merges need no identity, and merge the fetched heads whatever else the clone holds; a non-building pair is excluded and the rest still checked"
