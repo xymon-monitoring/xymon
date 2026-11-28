@@ -138,8 +138,14 @@ moverrd.sh: moverrd.sh.DIST
 
 ifeq ($(XYMONCGIURL),$(SECUREXYMONCGIURL))
    APACHECONF = etcfiles/xymon-apache-open.DIST
+   LIGHTTPDCONF = etcfiles/xymon-lighttpd-open.conf.DIST
+   NGINXCONF = etcfiles/xymon-nginx-open.conf.DIST
+   CADDYCONF = etcfiles/xymon-caddy-open.conf.DIST
 else
    APACHECONF = etcfiles/xymon-apache-secure.DIST
+   LIGHTTPDCONF = etcfiles/xymon-lighttpd-secure.conf.DIST
+   NGINXCONF = etcfiles/xymon-nginx-secure.conf.DIST
+   CADDYCONF = etcfiles/xymon-caddy-secure.conf.DIST
 endif
 
 # The Apache alias for the web pages. A literal Alias, so the URL is never
@@ -147,8 +153,28 @@ endif
 # XYMONHOSTURL empty) it needs the trailing slash on both sides.
 XYMONWEBALIAS = $(if $(XYMONHOSTURL),Alias $(XYMONHOSTURL) "$(INSTALLWWWDIR)",Alias / "$(INSTALLWWWDIR)/")
 
+# The lighttpd, nginx and caddy examples redirect a bare XYMONHOSTURL to its
+# trailing-slash form. With Xymon at the site root (XYMONHOSTURL empty) there
+# is no bare URL to redirect, and the line is left out.
+EXAMPLECOMMENT := \#
+LIGHTTPDBAREREDIRECT = $(if $(XYMONHOSTURL),url.redirect += ( "^$(XYMONHOSTURL)$$" => "$(XYMONHOSTURL)/" ),$(EXAMPLECOMMENT) Xymon is at the site root: no redirect for a bare URL)
+NGINXBAREREDIRECT = $(if $(XYMONHOSTURL),location = $(XYMONHOSTURL) { return 301 $(XYMONHOSTURL)/; },$(EXAMPLECOMMENT) Xymon is at the site root: no redirect for a bare URL)
+CADDYBAREREDIRECT = $(if $(XYMONHOSTURL),redir $(XYMONHOSTURL) $(XYMONHOSTURL)/ 301,$(EXAMPLECOMMENT) Xymon is at the site root: no redirect for a bare URL)
+
+# The lighttpd, nginx and caddy examples guard the secure CGI URL, where
+# Apache guards the secure CGI directory. With one directory for both, they
+# would serve the administration CGIs through XYMONCGIURL without a password.
+ifneq ($(XYMONCGIURL),$(SECUREXYMONCGIURL))
+ifeq ($(CGIDIR),$(SECURECGIDIR))
+$(warning CGIDIR and SECURECGIDIR are the same directory, $(CGIDIR): the lighttpd, nginx and caddy examples would serve the administration CGIs through $(XYMONCGIURL) without a password; use the Apache configuration, or separate directories)
+endif
+endif
+
 cfgfiles:
 	XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' XYMONWEBALIAS='$(XYMONWEBALIAS)' ../build/subst.sh XYMONHOME INSTALLETCDIR INSTALLWWWDIR CGIDIR SECURECGIDIR XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL XYMONWEBALIAS <$(APACHECONF) >etcfiles/xymon-apache.conf
+	XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' LIGHTTPDBAREREDIRECT='$(LIGHTTPDBAREREDIRECT)' ../build/subst.sh XYMONHOME INSTALLETCDIR INSTALLWWWDIR CGIDIR SECURECGIDIR XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL LIGHTTPDBAREREDIRECT <$(LIGHTTPDCONF) >etcfiles/xymon-lighttpd.conf
+	XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' NGINXBAREREDIRECT='$(NGINXBAREREDIRECT)' ../build/subst.sh XYMONHOME INSTALLETCDIR INSTALLWWWDIR CGIDIR SECURECGIDIR XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL NGINXBAREREDIRECT <$(NGINXCONF) >etcfiles/xymon-nginx.conf
+	XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' CADDYBAREREDIRECT='$(CADDYBAREREDIRECT)' ../build/subst.sh XYMONHOME INSTALLETCDIR INSTALLWWWDIR CGIDIR SECURECGIDIR XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL CADDYBAREREDIRECT <$(CADDYCONF) >etcfiles/xymon-caddy.conf
 	XYMONTOPDIR='$(XYMONTOPDIR)' XYMONLOGDIR='$(XYMONLOGDIR)' XYMONRUNDIR='$(XYMONRUNDIR)' XYMONHOSTNAME='$(XYMONHOSTNAME)' XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOSTOS='$(XYMONHOSTOS)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' XYMONHOME='$(XYMONHOME)' XYMONSTATICWWWDIR='$(INSTALLSTATICWWWDIR)' XYMONVAR='$(XYMONVAR)' FPING='$(FPING)' MAILPROGRAM='$(MAILPROGRAM)' RUNTIMEDEFS='$(RUNTIMEDEFS)' ../build/subst.sh XYMONTOPDIR XYMONLOGDIR XYMONRUNDIR XYMONHOSTNAME XYMONHOSTIP XYMONHOSTOS XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL XYMONHOME XYMONSTATICWWWDIR XYMONVAR FPING MAILPROGRAM RUNTIMEDEFS <etcfiles/xymonserver.cfg.DIST >etcfiles/xymonserver.cfg
 	../build/bb-commands.sh >>etcfiles/xymonserver.cfg
 	XYMONHOSTNAME='$(XYMONHOSTNAME)' XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOME='$(XYMONHOME)' ../build/subst.sh XYMONHOSTNAME XYMONHOSTIP XYMONHOME <etcfiles/hosts.cfg.DIST >etcfiles/hosts.cfg
@@ -162,65 +188,76 @@ cfgfiles:
 
 clean:
 	rm -f $(PROGRAMS) *.o *~ client/*~ rrd/*~
-	rm -f etcfiles/xymon-apache.conf etcfiles/xymonserver.cfg etcfiles/hosts.cfg etcfiles/alerts.cfg etcfiles/tasks.cfg etcfiles/cgioptions.cfg etcfiles/analysis.cfg etcfiles/combo.cfg etcfiles/graphs.cfg etcfiles/client-local.cfg etcfiles/rrddefinitions.cfg
+	rm -f etcfiles/xymon-apache.conf etcfiles/xymon-lighttpd.conf etcfiles/xymon-nginx.conf etcfiles/xymon-caddy.conf etcfiles/xymonserver.cfg etcfiles/hosts.cfg etcfiles/alerts.cfg etcfiles/tasks.cfg etcfiles/cgioptions.cfg etcfiles/analysis.cfg etcfiles/combo.cfg etcfiles/graphs.cfg etcfiles/client-local.cfg etcfiles/rrddefinitions.cfg
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
+
+# install-safe places each file and directory without following a symlink at
+# the destination name, owning and moding it as it goes. See client/Makefile.
+# There is no catch-all chown pass: each file is owned as it is placed, which
+# also keeps xymonping the setuid-root install xymonnet/Makefile made it.
+INSTALLSAFE = ../build/install-safe
+ifndef PKGBUILD
+ISOWN = -o $(XYMONUSER) -g `$(IDTOOL) -g $(XYMONUSER)`
+# critical.cfg is group-writable by the web server group, for the critical-view
+# editor CGI.
+# critical.cfg is group-writable (664) by the web server's group. Guard the
+# HTTPDGID interpolation as REPOWN does: an empty HTTPDGID would leave a bare
+# "-g" that swallows the path and fails the install, so fall back to ISOWN.
+CRITOWN = $(ISOWN)
+ifdef HTTPDGID
+CRITOWN = -o $(XYMONUSER) -g $(HTTPDGID)
+endif
+endif
 
 install: install-bin install-man install-cfg
 
 install-bin:
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
-	chmod 755 $(PROGRAMS)
-endif
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+	for f in $(PROGRAMS); do $(INSTALLSAFE) copy -m 755 $(ISOWN) $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; done
 
 install-man:
-ifndef PKGBUILD
-	chown $(XYMONUSER) *.1 *.5 *.8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5 *.8
-	chmod 644 *.1 *.5 *.8
-endif
-	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-	chmod 755 $(INSTALLROOT)$(MANROOT) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-endif
-	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
-	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
-	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
+	for d in man1 man5 man8; do $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(MANROOT)/$$d || exit 1; done
+	for m in *.1; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man1/$$m || exit 1; done
+	for m in *.5; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man5/$$m || exit 1; done
+	for m in *.8; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man8/$$m || exit 1; done
 
 install-cfg:
-	cd etcfiles; ../../build/merge-lines xymonserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/xymonserver.cfg LARRDCOLUMN=TRENDSCOLUMN LARRDS=TEST2RRD
-	cd etcfiles; ../../build/merge-lines cgioptions.cfg $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg
-	cd etcfiles; ../../build/merge-sects tasks.cfg $(INSTALLROOT)$(INSTALLETCDIR)/tasks.cfg larrdstatus=rrdstatus larrddata=rrddata
-	cd etcfiles; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
-	cd etcfiles; ../../build/merge-sects graphs.cfg $(INSTALLROOT)$(INSTALLETCDIR)/graphs.cfg
-	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
-	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	# The shipped .cfg track the defaults and are installed over the old copy on
+	# every upgrade; customisation lives in the matching .d drop-in directory
+	# (xymonserver.d, tasks.d, ...), which the install never touches. An existing
+	# real config is first copied to <name>.bak (root-owned 0600) so an edit is
+	# recoverable; a symlinked (relocated) config is left for install-safe copy to
+	# replace by name. See releasenotes.d. cgioptions.cfg and columndoc.csv have
+	# no .d and are overwritten too.
+	for f in xymonserver.cfg cgioptions.cfg tasks.cfg client-local.cfg graphs.cfg columndoc.csv; do \
+		d="$(INSTALLROOT)$(INSTALLETCDIR)/$$f"; \
+		if [ -f "$$d" ] && [ ! -L "$$d" ]; then $(INSTALLSAFE) copy -m 600 "$$d" "$$d.bak" || exit 1; fi; \
+		$(INSTALLSAFE) copy -m 644 $(ISOWN) etcfiles/$$f "$$d" || exit 1; \
+	done
+	# setup-newfiles owns each file it places from $$XYMONUSER (skipped under
+	# PKGBUILD, or when not run as root), so its outputs are Xymon-owned too.
+	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf) | XYMONUSER='$(XYMONUSER)' PKGBUILD='$(PKGBUILD)' ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	# The lighttpd, nginx and caddy configurations are examples to copy into a web
+	# server's own configuration, not files Xymon reads, so they go to examples/
+	# rather than etc/, and are replaced on every install: nothing edits them in
+	# place. xymon-apache.conf stays in etc/, where every packaging and the install
+	# guide have always found it. Each goes through install-safe, like the rest, so
+	# a symlink planted at the name is replaced rather than followed.
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONHOME)/examples
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) etcfiles/xymon-lighttpd.conf $(INSTALLROOT)$(XYMONHOME)/examples/xymon-lighttpd.conf
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) etcfiles/xymon-nginx.conf $(INSTALLROOT)$(XYMONHOME)/examples/xymon-nginx.conf
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) etcfiles/xymon-caddy.conf $(INSTALLROOT)$(XYMONHOME)/examples/xymon-caddy.conf
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
-	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/ ../../build/md5.dat
-	cd webfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
-	touch $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
-	chmod 664 $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
-	mkdir -p $(INSTALLROOT)$(XYMONLOGDIR); chmod 755 $(INSTALLROOT)$(XYMONLOGDIR)
-	mkdir -p $(INSTALLROOT)$(XYMONRUNDIR); chmod 755 $(INSTALLROOT)$(XYMONRUNDIR)
-	mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d; chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d
-	for d in alerts.d analysis.d combo.d graphs.d client-local.d rrddefinitions.d hosts.d xymonserver.d; do mkdir -p $(INSTALLROOT)$(INSTALLETCDIR)/$$d; chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)/$$d; done
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONRUNDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(XYMONVAR) $(INSTALLROOT)$(XYMONVAR)/*
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONLOGDIR) $(INSTALLROOT)$(XYMONRUNDIR) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/* $(INSTALLROOT)$(INSTALLBINDIR)/* $(INSTALLROOT)$(INSTALLETCDIR)/* $(INSTALLROOT)$(INSTALLWEBDIR)/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu/* $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(XYMONVAR) $(INSTALLROOT)$(XYMONVAR)/*
-	# ext/ holds the network-test helpers; a server built without xymonnet
-	# leaves it empty, and a bare "$(INSTALLEXTDIR)/*" then reaches chown as a
-	# literal unmatched path and fails the install. Recurse over the directory,
-	# which is well-defined whether it has contents or not.
-	chown -R $(XYMONUSER) $(INSTALLROOT)$(INSTALLEXTDIR)
-	chgrp -R `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLEXTDIR)
-	chgrp $(HTTPDGID) $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
-	chmod 664 $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
-
-	chown root $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || echo "Could not make xymonping owned by root, continuing"
-	chmod 4755 $(INSTALLROOT)$(INSTALLBINDIR)/xymonping || echo "Could not make xymonping suid-root, continuing"
-endif
+	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | XYMONUSER='$(XYMONUSER)' PKGBUILD='$(PKGBUILD)' ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/ ../../build/md5.dat
+	cd webfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | XYMONUSER='$(XYMONUSER)' PKGBUILD='$(PKGBUILD)' ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
+	$(INSTALLSAFE) touch -m 664 $(CRITOWN) $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg
+	$(INSTALLSAFE) touch -m 664 $(CRITOWN) $(INSTALLROOT)$(INSTALLETCDIR)/critical.cfg.bak
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONLOGDIR)
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONRUNDIR)
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLETCDIR)/tasks.d
+	for d in alerts.d analysis.d combo.d graphs.d client-local.d rrddefinitions.d hosts.d xymonserver.d; do $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLETCDIR)/$$d || exit 1; done
+	# No catch-all chown pass: each file and directory above was owned as it was
+	# placed -- setup-newfiles' files by setup-newfiles, the rest by their
+	# copy/mkdir/touch -- which keeps xymonping the setuid-root install xymonnet
+	# made it. The ext/ extensions are owned by xymonnet's install-ext, and
+	# anything an administrator left in ext/ is their own, not recursively re-owned.
 

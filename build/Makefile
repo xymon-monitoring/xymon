@@ -1,6 +1,9 @@
-TOOLS = merge-lines merge-sects setup-newfiles
+TOOLS = merge-lines merge-sects setup-newfiles install-safe
 
 all: $(TOOLS)
+
+install-safe: install-safe.c
+	$(CC) $(LDFLAGS) -o $@ $(CPPFLAGS) $(CFLAGS) $<
 
 merge-lines: merge-lines.c
 	$(CC) $(LDFLAGS) -o $@ $(CPPFLAGS) $(CFLAGS) $<
