@@ -162,6 +162,13 @@ appfeed.cgi: $(APPFEEDOBJS) $(XYMONLIB)
 clean:
 	rm -f $(PROGRAMS) *.o *~
 
+# install-safe places each file and directory without following a symlink at
+# the destination name, owning and moding it as it goes. See client/Makefile.
+INSTALLSAFE = ../build/install-safe
+ifndef PKGBUILD
+ISOWN = -o $(XYMONUSER) -g `$(IDTOOL) -g $(XYMONUSER)`
+endif
+
 install: install-bin install-cgi install-man
 
 # install-cgi hardlinks $(INSTALLBINDIR)/cgiwrap, which install-bin is what
@@ -174,32 +181,23 @@ install: install-bin install-cgi install-man
 install-cgi: install-bin
 
 install-bin:
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
-	chmod 755 $(PROGRAMS)
-endif
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+	for f in $(PROGRAMS); do $(INSTALLSAFE) copy -m 755 $(ISOWN) $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; done
 
 install-cgi:
-	mkdir -p $(INSTALLROOT)$(CGIDIR)
-	mkdir -p $(INSTALLROOT)$(SECURECGIDIR)
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(CGIDIR)
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(SECURECGIDIR)
+	# The CGIs are hardlinks to cgiwrap (installed mode 755, not setuid), which
+	# dispatches on its own name. ln places that trusted inode under each CGI
+	# name; it never writes attacker-controlled content, which is the hazard
+	# install-safe addresses, so it stays ln -f. A symlink-to-a-directory planted
+	# at a CGI name is at worst followed to place that same unprivileged inode
+	# inside the linked directory -- it cannot corrupt an arbitrary target.
 	for F in $(CGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(CGIDIR)/$$F || exit 1; done
 	for F in $(SECCGISCRIPTS); do ln -f $(INSTALLROOT)$(INSTALLBINDIR)/cgiwrap $(INSTALLROOT)$(SECURECGIDIR)/$$F || exit 1; done
 
 install-man:
-ifndef PKGBUILD
-	chown $(XYMONUSER) *.1 *.5 *.8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5 *.8
-	chmod 644 *.1 *.5 *.8
-endif
-	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
-endif
-	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
-	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
-	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
+	for d in man1 man5 man8; do $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(MANROOT)/$$d || exit 1; done
+	for m in *.1; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man1/$$m || exit 1; done
+	for m in *.5; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man5/$$m || exit 1; done
+	for m in *.8; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man8/$$m || exit 1; done
 

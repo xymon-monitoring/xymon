@@ -3,8 +3,8 @@
 #
 # tests/client/clientupdate-relocated.sh
 #
-# A client installed with INSTALLCLIENT{BIN,ETC,TMP,LOG}DIR has its
-# bin, etc, tmp or logs relocated, and a link left in its place under
+# A client installed with INSTALLCLIENT{BIN,ETC,TMP,LOG,EXT}DIR has its
+# bin, etc, tmp, logs or ext relocated, and a link left in its place under
 # XYMONHOME; a packaging such as Debian's leaves the same links.
 # clientupdate unpacks an update archive there with "tar xf -", and GNU tar,
 # like the native tar of OpenBSD and FreeBSD, replaces such a link with the
@@ -27,7 +27,7 @@ require_bin CLIENTUPDATE client/clientupdate
 work=$(mktempdir)
 
 # One case per relocated directory: the link stands where XYMONHOME/<dir> was.
-for d in bin etc tmp logs; do
+for d in bin etc tmp logs ext; do
 	home="$work/$d/home"
 	mkdir -p "$home" "$work/$d/elsewhere"
 	[ "$d" = tmp ] || mkdir "$home/tmp"  # the tmp case links tmp itself
@@ -53,4 +53,4 @@ for d in bin etc tmp logs; do
 		|| fail "clientupdate --reexec took the update lock before refusing"
 done
 
-pass "clientupdate refuses to update a client whose bin, etc, tmp or logs is relocated, before --reexec copies itself, and leaves the link in place"
+pass "clientupdate refuses to update a client whose bin, etc, tmp, logs or ext is relocated, before --reexec copies itself, and leaves the link in place"

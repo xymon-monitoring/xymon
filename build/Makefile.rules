@@ -50,9 +50,16 @@ export XYMONRUNDIR
 
 # Where the client's own files go. A client-only build honours the
 # INSTALLETCDIR, INSTALLBINDIR and INSTALLTMPDIR configure.client already
-# records and nothing read; a server build keeps its embedded client under
-# XYMONCLIENTHOME. "override", because an empty value on the command line
-# would otherwise win over the default and install into INSTALLROOT itself.
+# records and nothing read; a server build keeps its embedded client
+# under XYMONCLIENTHOME. INSTALLEXTDIR is not taken for the client's
+# ext: it is the server's setting, and a client-only build configured
+# with the server's answers would install into the server's ext. Only
+# INSTALLCLIENTEXTDIR moves it. A server build's client has no ext of
+# its own: a server's extensions are the server's, in its INSTALLEXTDIR
+# and run from tasks.cfg, and nothing on a server reads its client's, so
+# there INSTALLCLIENTEXTDIR is ignored and no ext is made. "override",
+# because an empty value on the command line would otherwise win over
+# the default and install into INSTALLROOT itself.
 #
 # CLIENTHOME is XYMONCLIENTHOME without a trailing slash: the defaults are
 # built from it, and install-clientdirs recognises them by name, so /xc/ and
@@ -80,6 +87,15 @@ override INSTALLCLIENTTMPDIR = $(CLIENTHOME)/tmp
 endif
 ifeq ($(strip $(INSTALLCLIENTLOGDIR)),)
 override INSTALLCLIENTLOGDIR = $(CLIENTHOME)/logs
+endif
+ifeq ($(CLIENTONLY),yes)
+ifeq ($(strip $(INSTALLCLIENTEXTDIR)),)
+override INSTALLCLIENTEXTDIR = $(CLIENTHOME)/ext
+endif
+CLIENTEXTDIRS = ext:$(INSTALLCLIENTEXTDIR)
+else
+override INSTALLCLIENTEXTDIR =
+CLIENTEXTDIRS =
 endif
 
 ifndef INSTALLBINDIR
@@ -285,9 +301,12 @@ export INSTALLENVDIR
 # wherever the tree was installed.
 install-systemd:
 ifneq ($(strip $(INSTALLSYSTEMDDIR)),)
-	mkdir -p $(INSTALLROOT)$(INSTALLSYSTEMDDIR)
-	XYMONHOME='$(XYMONHOME)' XYMONUSER='$(XYMONUSER)' INSTALLENVDIR='$(INSTALLENVDIR)' build/subst.sh XYMONHOME XYMONUSER INSTALLENVDIR <tools/xymonlaunch.service.DIST >$(INSTALLROOT)$(INSTALLSYSTEMDDIR)/xymonlaunch.service
-	chmod 644 $(INSTALLROOT)$(INSTALLSYSTEMDDIR)/xymonlaunch.service
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(INSTALLSYSTEMDDIR)
+	# Generate into a temp in the (trusted) build tree, then install it safely:
+	# a ">" straight onto the destination would follow a symlink planted there.
+	XYMONHOME='$(XYMONHOME)' XYMONUSER='$(XYMONUSER)' INSTALLENVDIR='$(INSTALLENVDIR)' build/subst.sh XYMONHOME XYMONUSER INSTALLENVDIR <tools/xymonlaunch.service.DIST >tools/xymonlaunch.service.tmp
+	$(INSTALLSAFE) copy -m 644 tools/xymonlaunch.service.tmp $(INSTALLROOT)$(INSTALLSYSTEMDDIR)/xymonlaunch.service
+	rm -f tools/xymonlaunch.service.tmp
 endif
 
 install-servermsg:
@@ -307,70 +326,68 @@ install-servermsg:
 # the xymon user cannot enter: the chmod 755 below is skipped under PKGBUILD
 # and never reaches the parents. A directory that already exists is left as
 # it is.
-install-dirs:
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR))
+# install-safe places each directory without following a symlink at the name,
+# owning and moding it at creation (there is no catch-all chown). Called
+# build/-relative: this file is included from the top makefile. Relocation
+# symlinks (ln -s) and the apache-group perms on rep/snap are kept.
+INSTALLSAFE = build/install-safe
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
-	chmod 755 $(INSTALLROOT)$(XYMONHOME) $(INSTALLROOT)$(XYMONHOME)/download $(INSTALLROOT)$(XYMONVAR)
+ISOWN = -o $(XYMONUSER) -g `$(IDTOOL) -g $(XYMONUSER)`
+endif
+# rep and snap are group-writable (775) by the apache group for reports and
+# snapshots; a package build leaves them 755.
+REPMODE = 755
+ifndef PKGBUILD
+REPMODE = 775
+REPOWN = $(ISOWN)
+ifdef HTTPDGID
+REPOWN = -o $(XYMONUSER) -g $(HTTPDGID)
+endif
 endif
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLBINDIR))
+install-dirs:
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONHOME))
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONHOME)/download)
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR))
+
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLBINDIR))
 ifneq ($(INSTALLBINDIR),$(XYMONHOME)/bin)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/bin || true
 	ln -s $(INSTALLBINDIR) $(INSTALLROOT)$(XYMONHOME)/bin || true
 endif
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)
-	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)
-endif
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLETCDIR))
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLETCDIR))
 ifneq ($(INSTALLETCDIR),$(XYMONHOME)/etc)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/etc || true
 	ln -s $(INSTALLETCDIR) $(INSTALLROOT)$(XYMONHOME)/etc || true
 endif
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)
-	chmod 755 $(INSTALLROOT)$(INSTALLETCDIR)
-endif
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLEXTDIR))
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLEXTDIR))
 ifneq ($(INSTALLEXTDIR),$(XYMONHOME)/ext)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/ext || true
 	ln -s $(INSTALLEXTDIR) $(INSTALLROOT)$(XYMONHOME)/ext || true
 endif
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLEXTDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLEXTDIR)
-	chmod 755 $(INSTALLROOT)$(INSTALLEXTDIR)
-endif
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLTMPDIR))
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLTMPDIR))
 ifneq ($(INSTALLTMPDIR),$(XYMONHOME)/tmp)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/tmp || true
 	ln -s $(INSTALLTMPDIR) $(INSTALLROOT)$(XYMONHOME)/tmp || true
 endif
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLTMPDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLTMPDIR)
-	chmod 755 $(INSTALLROOT)$(INSTALLTMPDIR)
-endif
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLWEBDIR))
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLWEBDIR))
 ifneq ($(INSTALLWEBDIR),$(XYMONHOME)/web)
 	rm -f $(INSTALLROOT)$(XYMONHOME)/web || true
 	ln -s $(INSTALLWEBDIR) $(INSTALLROOT)$(XYMONHOME)/web || true
 endif
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLWEBDIR)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLWEBDIR)
-	chmod 755 $(INSTALLROOT)$(INSTALLWEBDIR)
-endif
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap)
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLWWWDIR))
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs)
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help)
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLWWWDIR)/html)
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu)
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLWWWDIR)/notes)
+	(umask 022 && $(INSTALLSAFE) mkdir -m $(REPMODE) $(REPOWN) $(INSTALLROOT)$(INSTALLWWWDIR)/rep)
+	(umask 022 && $(INSTALLSAFE) mkdir -m $(REPMODE) $(REPOWN) $(INSTALLROOT)$(INSTALLWWWDIR)/snap)
 ifneq ($(INSTALLSTATICWWWDIR),$(INSTALLWWWDIR))
 	@for d in gifs help menu; do \
 		if test -d $(INSTALLROOT)$(INSTALLWWWDIR)/$$d && test ! -L $(INSTALLROOT)$(INSTALLWWWDIR)/$$d; then \
@@ -387,71 +404,23 @@ ifneq ($(INSTALLWWWDIR),$(XYMONHOME)/www)
 	ln -s $(INSTALLWWWDIR) $(INSTALLROOT)$(XYMONHOME)/www || true
 endif
 ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
-	chgrp `$(IDTOOL) -g $(XYMONUSER)`  $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
-	chmod 755  $(INSTALLROOT)$(INSTALLWWWDIR) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/gifs $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help $(INSTALLROOT)$(INSTALLWWWDIR)/html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/menu $(INSTALLROOT)$(INSTALLWWWDIR)/notes $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
-ifdef HTTPDGID
-# The www/rep and www/snap directories must be writable by the apache daemon
-	chgrp $(HTTPDGID) $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
-endif
-	chmod g+w $(INSTALLROOT)$(INSTALLWWWDIR)/rep $(INSTALLROOT)$(INSTALLWWWDIR)/snap
 endif
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/acks)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/acks
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/acks
-	chmod 755 $(INSTALLROOT)$(XYMONVAR)/acks
-endif
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR)/acks)
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/data)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/data
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/data
-	chmod 755 $(INSTALLROOT)$(XYMONVAR)/data
-endif
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR)/data)
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/disabled)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/disabled
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/disabled
-	chmod 755 $(INSTALLROOT)$(XYMONVAR)/disabled
-endif
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR)/disabled)
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/hist)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/hist
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/hist
-	chmod 755 $(INSTALLROOT)$(XYMONVAR)/hist
-endif
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR)/hist)
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/histlogs)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/histlogs || echo "Warning: Could not set owner on the histlogs directory"
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/histlogs || echo "Warning: Could not set group on the histlogs directory"
-	chmod 755 $(INSTALLROOT)$(XYMONVAR)/histlogs
-endif
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR)/histlogs)
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/hostdata)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/hostdata || echo "Warning: Could not set owner on the hostdata directory"
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/hostdata || echo "Warning: Could not set group on the hostdata directory"
-	chmod 755 $(INSTALLROOT)$(XYMONVAR)/hostdata
-endif
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR)/hostdata)
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/logs)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/logs
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/logs
-	chmod 755 $(INSTALLROOT)$(XYMONVAR)/logs
-endif
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR)/logs)
 
-	(umask 022 && mkdir -p $(INSTALLROOT)$(XYMONVAR)/rrd)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONVAR)/rrd
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(XYMONVAR)/rrd
-	chmod 755 $(INSTALLROOT)$(XYMONVAR)/rrd
-endif
+	(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONVAR)/rrd)
 
 # The install-bin targets of common, xymongen and xymonnet depend on their
 # programs, so an install that finds one older than the libraries rebuilds it
@@ -488,7 +457,8 @@ else
 # After lib-build, so the archives are complete and current before they are
 # copied, even when make runs it in the same parallel run as the build.
 install-devel: lib-build
-	mkdir -p $(INSTALLROOT)$(INSTALLLIBDIR) $(INSTALLROOT)$(INSTALLINCDIR)
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(INSTALLLIBDIR)
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(INSTALLINCDIR)
 # A back-compat symlink so $(XYMONHOME)/sdk keeps resolving when the kit is
 # relocated as a tree, by INSTALLSDKDIR. A split across FHS trees has no
 # single directory to point at -- the headers and archives are apart -- so
@@ -500,7 +470,7 @@ install-devel: lib-build
 # link only when nothing solid is there, and say so otherwise.
 ifndef PKGBUILD
 ifneq ($(INSTALLSDKDIR),$(XYMONHOME)/sdk)
-	mkdir -p $(INSTALLROOT)$(XYMONHOME)
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(XYMONHOME)
 	if [ -d $(INSTALLROOT)$(XYMONHOME)/sdk ] && [ ! -L $(INSTALLROOT)$(XYMONHOME)/sdk ]; then \
 		echo "install-devel: $(XYMONHOME)/sdk is a directory from an earlier install; not linking it to $(INSTALLSDKDIR)" >&2; \
 	else \
@@ -513,9 +483,12 @@ endif
 	# "pkg-config --cflags --libs --static xymon" and needs to know neither
 	# the sibling header layout nor the static-link chain. Generated with the
 	# configured paths and library flags, so it tracks a relocated install.
-	mkdir -p $(INSTALLROOT)$(INSTALLPCDIR)
-	XYMONHOME='$(XYMONHOME)' INSTALLINCDIR='$(INSTALLINCDIR)' INSTALLLIBDIR='$(INSTALLLIBDIR)' XYMONVERSION='$(XYMONVERSION)' PCREINCDIR='$(PCREINCDIR)' PCRELIBS='$(PCRELIBS)' SSLLIBS='$(SSLLIBS)' LIBRTDEF='$(LIBRTDEF)' $(BUILDTOPDIR)/build/subst.sh XYMONHOME INSTALLINCDIR INSTALLLIBDIR XYMONVERSION PCREINCDIR PCRELIBS SSLLIBS LIBRTDEF <$(BUILDTOPDIR)/build/xymon.pc.in >$(INSTALLROOT)$(INSTALLPCDIR)/xymon.pc
-	chmod 644 $(INSTALLROOT)$(INSTALLPCDIR)/xymon.pc
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(INSTALLPCDIR)
+	# Generate into a temp in the (trusted) build tree, then install it safely:
+	# a ">" straight onto the destination would follow a symlink planted there.
+	XYMONHOME='$(XYMONHOME)' INSTALLINCDIR='$(INSTALLINCDIR)' INSTALLLIBDIR='$(INSTALLLIBDIR)' XYMONVERSION='$(XYMONVERSION)' PCREINCDIR='$(PCREINCDIR)' PCRELIBS='$(PCRELIBS)' SSLLIBS='$(SSLLIBS)' LIBRTDEF='$(LIBRTDEF)' $(BUILDTOPDIR)/build/subst.sh XYMONHOME INSTALLINCDIR INSTALLLIBDIR XYMONVERSION PCREINCDIR PCRELIBS SSLLIBS LIBRTDEF <$(BUILDTOPDIR)/build/xymon.pc.in >$(BUILDTOPDIR)/build/xymon.pc.tmp
+	$(INSTALLSAFE) copy -m 644 $(BUILDTOPDIR)/build/xymon.pc.tmp $(INSTALLROOT)$(INSTALLPCDIR)/xymon.pc
+	rm -f $(BUILDTOPDIR)/build/xymon.pc.tmp
 endif
 
 install-xymongen: install-common
@@ -532,7 +505,6 @@ install-xymond: install-common
 
 install-web: install-common
 	DORRD="$(DORRD)" MANROOT="$(MANROOT)" XYMONTOPDIR="$(XYMONTOPDIR)" XYMONHOME="$(XYMONHOME)" XYMONVAR="$(XYMONVAR)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" XYMONLOGDIR="$(XYMONLOGDIR)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C web install
-	find $(INSTALLROOT)$(INSTALLWWWDIR) -type f -exec chmod 644 {} \;
 
 
 # NOTE: This one is normally not used - man-page install is done by the sub-Makefiles during "make install"
@@ -543,7 +515,6 @@ install-man:
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C xymonproxy install-man
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C xymond install-man
 	XYMONHOME="$(XYMONHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C web install-man
-	find $(INSTALLROOT)$(MANROOT) -type f -exec chmod 644 {} \;
 
 # install-dirs makes the www tree and, when INSTALLSTATICWWWDIR is set, the
 # www/help -> static/help symlink the runtime help path resolves through. The
@@ -599,10 +570,11 @@ client-install: install-client
 # CDPATH set and a relative INSTALLROOT, cd prints the directory it chose,
 # and that line would be compared too. The second loop compares after it
 # creates the directory, so a first install finds the two the same too.
-CLIENTDIRS = etc:$(INSTALLCLIENTETCDIR) bin:$(INSTALLCLIENTBINDIR) tmp:$(INSTALLCLIENTTMPDIR) logs:$(INSTALLCLIENTLOGDIR)
+CLIENTDIRS = etc:$(INSTALLCLIENTETCDIR) bin:$(INSTALLCLIENTBINDIR) tmp:$(INSTALLCLIENTTMPDIR) logs:$(INSTALLCLIENTLOGDIR) $(CLIENTEXTDIRS)
 CLIENTDIR_DEFAULT = { test "$$to" = "$(CLIENTHOME)/$$d" || { test -d $(INSTALLROOT)$$to && test -d $$old && here=`cd $(INSTALLROOT)$$to >/dev/null && pwd -P` && test -n "$$here" && test "$$here" = "`cd $$old >/dev/null && pwd -P`"; }; }
 ifndef PKGBUILD
-CLIENTDIR_OWN = chown $(XYMONUSER) $(INSTALLROOT)$$to && chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$$to || exit 1;
+# Ownership is set by install-safe mkdir -o above; nothing to add here.
+CLIENTDIR_OWN =
 endif
 
 install-clientdirs:
@@ -615,11 +587,11 @@ install-clientdirs:
 			exit 1; \
 		fi; \
 	done
-	test -d $(INSTALLROOT)$(CLIENTHOME) || { (umask 022 && mkdir -p $(INSTALLROOT)$(CLIENTHOME)) && chmod 755 $(INSTALLROOT)$(CLIENTHOME); }
+	test -d $(INSTALLROOT)$(CLIENTHOME) || { (umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(CLIENTHOME)); }
 	@for p in $(CLIENTDIRS); do \
 		d=$${p%%:*}; to=$${p#*:}; to=$${to%/}; old=$(INSTALLROOT)$(CLIENTHOME)/$$d; \
 		if test ! -d $(INSTALLROOT)$$to; then \
-			(umask 022 && mkdir -p $(INSTALLROOT)$$to) && chmod 755 $(INSTALLROOT)$$to || exit 1; \
+			(umask 022 && $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$$to) || exit 1; \
 			$(CLIENTDIR_OWN) \
 		fi; \
 		$(CLIENTDIR_DEFAULT) && continue; \
@@ -627,7 +599,7 @@ install-clientdirs:
 	done
 
 install-client: client install-clientdirs
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)"
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" PKGBUILD="$(PKGBUILD)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)" INSTALLCLIENTEXTDIR="$(INSTALLCLIENTEXTDIR)"
 
 install-clientmsg:
 	@echo ""
@@ -636,4 +608,4 @@ install-clientmsg:
 	@echo "To start the Xymon client, as the $(XYMONUSER) user run '${XYMONHOME}/runclient.sh start'"
 
 install-localclient: install-clientdirs
-	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)"
+	XYMONHOME="$(XYMONCLIENTHOME)" INSTALLROOT="$(INSTALLROOT)" XYMONUSER="$(XYMONUSER)" IDTOOL="$(IDTOOL)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient INSTALLCLIENTETCDIR="$(INSTALLCLIENTETCDIR)" INSTALLCLIENTBINDIR="$(INSTALLCLIENTBINDIR)" INSTALLCLIENTTMPDIR="$(INSTALLCLIENTTMPDIR)" INSTALLCLIENTLOGDIR="$(INSTALLCLIENTLOGDIR)" INSTALLCLIENTEXTDIR="$(INSTALLCLIENTEXTDIR)"

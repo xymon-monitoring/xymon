@@ -57,7 +57,8 @@ install_vars() {
 		"INSTALLEXTDIR=$d/top/server/ext" "INSTALLTMPDIR=$d/var/tmp" \
 		"INSTALLWEBDIR=$d/etc/web" "INSTALLWWWDIR=$d/var/www" \
 		"INSTALLCLIENTETCDIR=$d/top/client/etc" "INSTALLCLIENTBINDIR=$d/top/client/bin" \
-		"INSTALLCLIENTTMPDIR=$d/top/client/tmp" "INSTALLCLIENTLOGDIR=$d/top/client/logs"
+		"INSTALLCLIENTTMPDIR=$d/top/client/tmp" "INSTALLCLIENTLOGDIR=$d/top/client/logs" \
+		"INSTALLCLIENTEXTDIR=$d/top/client/ext"
 }
 
 # run_make DEST LOG TARGET [VAR=VALUE...] -- make TARGET with DEST's paths.
