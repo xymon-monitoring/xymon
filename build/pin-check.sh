@@ -189,7 +189,10 @@ die() { echo "$*" >&2; exit 1; }
 # every restore: a test that execs a daemon would otherwise run the binary built
 # from the code we have just put back, and a fix absent from the source but
 # present in the binary produces a finding that is purely an artefact.
-build_tree() { make -j"$JOBS" >"$work/make.log" 2>&1; }
+# LC_ALL=C so the compiler's diagnostics stay in English: build_or_recover reads
+# "error:" out of make.log to find the files a broken build named, and a
+# translated toolchain writes that word in its own language (#628).
+build_tree() { LC_ALL=C make -j"$JOBS" >"$work/make.log" 2>&1; }
 
 # is_inert PATH -- true when reverting the path cannot change what a local test
 # run does, so a pull request made only of these is skipped rather than
@@ -652,6 +655,57 @@ $(head -n 5 "$work/merge.err")"
 	fi
 }
 
+# build_or_recover BASEREF PREFIX -- build the integration branch; if it does
+# not compile, drop the pull requests that touch the files the compiler names,
+# rebuild without them from BASEREF, and repeat until it builds or no pull
+# request can be blamed. A dropped one is recorded in $work/notbuilt as
+# "N<TAB>files" and taken out of $work/prs; build_integration rewrites
+# $work/merged on each rebuild, so it ends holding only what remains. Returns 0
+# once the branch builds, 1 when no exclusion makes it build (a broken toolchain,
+# or a clash the compiler does not localise to a file).
+#
+# The whole group touching a named file is dropped, not one of it: two changes
+# can each build alone and break together, and nothing here can tell which side
+# is right -- so neither is verified and both are named, the way a merge conflict
+# names both without picking a winner.
+#
+# ponytail: file-blame heuristic -- a pull request that merely touches a named
+# file is dropped though it may be innocent, and a third that touches it goes
+# with the pair. Upgrade path, if that ever misleads: bisect the merged set for
+# the minimal breaking subset -- deliberately not done, it is many rebuilds for a
+# weekly check.
+build_or_recover() {
+	bor_base=$1 bor_prefix=$2
+	: >"$work/notbuilt"
+	while :; do
+		build_tree && return 0
+		# the files the compiler named, reduced to basenames -- the error line
+		# carries the path make compiled from (a subdirectory), the diff below
+		# the path from the tree root.
+		sed -n 's/^\([^ :]*\):[0-9][0-9]*:.*error:.*/\1/p' "$work/make.log" \
+			| sed 's#.*/##' | sort -u >"$work/errfiles"
+		[ -s "$work/errfiles" ] || return 1
+		# Three dots: the files the pull request itself changed, from its merge
+		# base. Two dots would compare tip to tip and blame every pull request
+		# forked before a recent change to one of the named files, though it
+		# never touched it.
+		: >"$work/suspects"
+		while IFS= read -r bor_n; do
+			git diff --name-only "$bor_base...$bor_prefix$bor_n" 2>/dev/null \
+				| sed 's#.*/##' | sort -u | grep -qxF -f "$work/errfiles" \
+				&& printf '%s\n' "$bor_n" >>"$work/suspects"
+		done <"$work/merged"
+		[ -s "$work/suspects" ] || return 1
+		bor_files=$(tr '\n' ' ' <"$work/errfiles")
+		while IFS= read -r bor_n; do
+			printf '%s\t%s\n' "$bor_n" "${bor_files% }" >>"$work/notbuilt"
+		done <"$work/suspects"
+		grep -vxF -f "$work/suspects" "$work/prs" >"$work/prs.kept"
+		mv "$work/prs.kept" "$work/prs"
+		build_integration "$bor_base" "$bor_prefix"
+	done
+}
+
 run_integration() {
 	# Put back what was checked out, as --commit does: the integration branch
 	# is a working state, not somewhere to leave a contributor's checkout --
@@ -661,17 +715,23 @@ run_integration() {
 	fetch_heads
 	list_prs
 	build_integration "$UP_REFS$BASE" "$PR_REFS"
-	integ=$(git rev-parse HEAD)
 	base_sha=$(git rev-parse "$UP_REFS$BASE")
 
-	build_tree || die "the integration branch does not build; nothing below would mean anything"
+	# A revert can only be read on a branch that builds. If the merged branch
+	# does not, exclude the pull requests the compiler blames and rebuild without
+	# them, so one incompatible pair does not blind the sweep for every other
+	# pull request. Only a failure no exclusion fixes stops the run.
+	build_or_recover "$UP_REFS$BASE" "$PR_REFS" || die "the integration branch does not build, and no set of pull requests isolates it; nothing below would mean anything.
+First errors:
+$(grep -m3 'error:' "$work/make.log")"
+	integ=$(git rev-parse HEAD)
 
 	# The header reports what the branch is made of; --pr narrows only what
 	# gets evaluated on it.
 	cp "$work/merged" "$work/evaluate"
 	if [ -n "$only" ]; then
 		grep -qx "$only" "$work/merged" \
-			|| die "#$only is not on the integration branch: it is not open, or it does not merge onto $BASE"
+			|| die "#$only is not on the integration branch: it is not open, it does not merge onto $BASE, or it was excluded for not building with the rest"
 		printf '%s\n' "$only" >"$work/evaluate"
 	fi
 
@@ -703,12 +763,23 @@ run_integration() {
 		evaluate "#$n" "$mb" "$PR_REFS$n" "$integ"
 	done <"$work/evaluate"
 
+	# A pull request excluded for not building with the rest is verified by
+	# nobody and named here, so the sweep says why it was left out instead of
+	# dropping it silently.
+	while IFS= read -r nb_line; do
+		nb_n=${nb_line%%	*}
+		finding "#$nb_n" "cannot verify" "" "excluded -- it and another do not build together (${nb_line#*	})"
+	done <"$work/notbuilt"
+
 	n_merged=$(wc -l <"$work/merged" | tr -d ' ')
 	n_not=$(wc -l <"$work/notmerged" | tr -d ' ')
+	n_notbuilt=$(wc -l <"$work/notbuilt" | tr -d ' ')
+	r_left="$n_not could not be merged onto it"
+	[ "$n_notbuilt" = 0 ] || r_left="$r_left, $n_notbuilt excluded for not building with the rest"
 	if [ -n "$only" ]; then
-		report "Integration branch: \`$BASE\` + $n_merged open pull requests ($n_not could not be merged onto it). Evaluating #$only only."
+		report "Integration branch: \`$BASE\` + $n_merged open pull requests ($r_left). Evaluating #$only only."
 	else
-		report "Integration branch: \`$BASE\` + $n_merged open pull requests ($n_not could not be merged onto it)."
+		report "Integration branch: \`$BASE\` + $n_merged open pull requests ($r_left)."
 	fi
 
 	git checkout -q -f "$i_here" 2>/dev/null
@@ -742,12 +813,16 @@ case $mode in
 	declared)  declared_deps; exit 0 ;;
 	rangebase) range_base "$@"; exit 0 ;;
 	integrate)
-		# --integrate BASE N... : the merge step alone, for its test, merging
-		# the same refs as a run does.
+		# --integrate BASE N... : the merge and build-recovery steps, for their
+		# test, merging the same refs as a run does. Prints the pull requests
+		# left on the branch, then any excluded for not building with the rest,
+		# one per "excluded N files" line.
 		i_base=$1; shift
 		printf '%s\n' "$@" >"$work/prs"
 		build_integration "$i_base" "$PR_REFS"
+		build_or_recover "$i_base" "$PR_REFS" || :
 		cat "$work/merged"
+		[ -s "$work/notbuilt" ] && sed 's/^/excluded /' "$work/notbuilt"
 		exit 0 ;;
 	local)  run_local ;;
 	commit) run_commit ;;
