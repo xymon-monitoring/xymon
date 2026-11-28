@@ -81,7 +81,22 @@ Re-reads the configuration file, re-opens the --log file, and forwards
 the signal to every running task marked SENDHUP in tasks.cfg.
 
 .IP "\fBSIGTERM\fR"
-Stops the tasks, removes their PIDFILEs, and exits.
+Stops xymonlaunch. Every running task is sent a SIGTERM and its PIDFILE
+is removed, and xymonlaunch exits without waiting for the tasks.
+
+A task with an INTERVAL or a CRONDATE is started in a process group of its
+own, and the signal goes to that group: the task ends with whatever it
+started. What such a task left running after it exited is ended too. The
+client leaves a vmstat running for the five minutes its sample takes, and
+this is what ends it when the client is stopped. A command that such a
+task starts and that must outlive xymonlaunch has to leave the task's
+process group, for instance with \fBsetsid\fR.
+
+A task that stays up is signalled alone, and ends its own children when it
+has written what it holds.
+.IP "\fBSIGINT\fR"
+As SIGTERM. Run in the foreground with \fB--no-daemon\fR, an interrupt
+from the keyboard stops xymonlaunch and its tasks in the same way.
 
 .SH "SEE ALSO"
 tasks.cfg(5), xymon(7)

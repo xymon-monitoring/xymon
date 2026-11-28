@@ -1,0 +1,16 @@
+xymonlaunch -- stopping it ends what its periodic tasks left running
+--------------------------------------------------------------------
+
+Stopping xymonlaunch, by whatever started it -- runclient.sh, an init
+script, systemd, launchd -- now also ends the vmstat the client leaves
+running for its five-minute sample. Before, it stayed for up to five
+minutes after the client or the server was stopped, and a quick restart
+had two of them running. The sample it was taking is discarded, where it
+was reported with the averages since boot in place of the sample.
+
+This holds for anything a task with an INTERVAL or a CRONDATE starts: such
+a task runs in a process group of its own, and what is left of the group is
+sent a SIGTERM when xymonlaunch stops. If one of your own tasks starts a
+command that must keep running after xymonlaunch stops, start that command
+with setsid, or move it out of the task. Tasks that stay up, such as
+xymond, are stopped as before.
