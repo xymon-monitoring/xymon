@@ -236,6 +236,16 @@ install-cfg:
 	# setup-newfiles owns each file it places from $$XYMONUSER (skipped under
 	# PKGBUILD, or when not run as root), so its outputs are Xymon-owned too.
 	cd etcfiles; (echo "hosts.cfg"; echo "alerts.cfg"; echo "analysis.cfg"; echo "combo.cfg"; echo "client-local.cfg"; echo "holidays.cfg"; echo "rrddefinitions.cfg"; echo snmpmibs.cfg; echo xymonmenu.cfg; echo xymon-apache.conf) | XYMONUSER='$(XYMONUSER)' PKGBUILD='$(PKGBUILD)' ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	# The lighttpd, nginx and caddy configurations are examples to copy into a web
+	# server's own configuration, not files Xymon reads, so they go to examples/
+	# rather than etc/, and are replaced on every install: nothing edits them in
+	# place. xymon-apache.conf stays in etc/, where every packaging and the install
+	# guide have always found it. Each goes through install-safe, like the rest, so
+	# a symlink planted at the name is replaced rather than followed.
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(XYMONHOME)/examples
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) etcfiles/xymon-lighttpd.conf $(INSTALLROOT)$(XYMONHOME)/examples/xymon-lighttpd.conf
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) etcfiles/xymon-nginx.conf $(INSTALLROOT)$(XYMONHOME)/examples/xymon-nginx.conf
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) etcfiles/xymon-caddy.conf $(INSTALLROOT)$(XYMONHOME)/examples/xymon-caddy.conf
 	cd $(INSTALLROOT)$(XYMONHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | XYMONUSER='$(XYMONUSER)' PKGBUILD='$(PKGBUILD)' ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/ ../../build/md5.dat
 	cd webfiles; find . | grep -v RCS | grep -v ".svn" | grep -v DIST | XYMONUSER='$(XYMONUSER)' PKGBUILD='$(PKGBUILD)' ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
