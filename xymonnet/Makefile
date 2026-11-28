@@ -101,57 +101,55 @@ clean:
 	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 
+# install-safe places each file and directory without following a symlink at
+# the destination name, owning and moding it as it goes. See client/Makefile.
+INSTALLSAFE = ../build/install-safe
+ifndef PKGBUILD
+ISOWN = -o $(XYMONUSER) -g `$(IDTOOL) -g $(XYMONUSER)`
+endif
+
 install: install-bin install-ext install-config install-man
 
 install-bin: $(PROGRAMS)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
-	chmod 755 $(PROGRAMS)
-endif
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+	# xymonping needs raw sockets, so outside a package build it is installed
+	# setuid-root -- as a fresh copy from the trusted build output, never by
+	# chmod'ing the installed, Xymon-owned file in place (which that user could
+	# replace first). A setuid mode is accepted only root-owned and not
+	# group/world-writable (4755 is). Where the install is not run as root the
+	# copy to root fails, and it falls back to a plain Xymon-owned install, as the
+	# old best-effort chmod did. Under PKGBUILD the setuid bit is left to the
+	# packaging, so a staged xymonping is installed plain like the rest.
+	for f in $(PROGRAMS); do \
+		if [ "$$f" = xymonping ] && [ -z "$(PKGBUILD)" ]; then \
+			$(INSTALLSAFE) copy -m 4755 -o root $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f \
+			|| $(INSTALLSAFE) copy -m 755 $(ISOWN) $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f \
+			|| exit 1; \
+		else \
+			$(INSTALLSAFE) copy -m 755 $(ISOWN) $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
+		fi; \
+	done
 
 install-ext: $(EXTENSIONS)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(EXTENSIONS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(EXTENSIONS)
-	chmod 755 $(EXTENSIONS)
-endif
-	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
+	for f in $(EXTENSIONS); do $(INSTALLSAFE) copy -m 755 $(ISOWN) $$f $(INSTALLROOT)$(INSTALLEXTDIR)/$$f || exit 1; done
 
 # The debug tool "all" builds, xymonnetprobe -- contest.c built standalone,
 # to run one of xymonnet's network tests by hand -- is otherwise discarded:
 # nothing installs it, exactly like lib/'s diagnostics. Reached from the
 # top-level "make install-tools"; deliberately not part of "install".
 install-tools: $(DBGTOOLS)
-	@mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
-	cp -fp xymonnetprobe $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
-	chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
-endif
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(INSTALLBINDIR)
+	$(INSTALLSAFE) copy -m 755 $(ISOWN) xymonnetprobe $(INSTALLROOT)$(INSTALLBINDIR)/xymonnetprobe
 
 install-config:
-	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-	chmod 644 $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-endif
+	# protocols.cfg is installed over the old copy on every upgrade (it has no .d
+	# drop-in). See releasenotes.d.
+	d="$(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg"; \
+	if [ -f "$$d" ] && [ ! -L "$$d" ]; then $(INSTALLSAFE) copy -m 600 "$$d" "$$d.bak" || exit 1; fi; \
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) protocols.cfg "$$d"
 
 install-man:
-ifndef PKGBUILD
-	chown $(XYMONUSER) *.1 *.5
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5
-	chmod 644 *.1 *.5
-endif
-	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
-	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5
-endif
-	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
-	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(MANROOT)/man1
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(MANROOT)/man5
+	for m in *.1; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man1/$$m || exit 1; done
+	for m in *.5; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man5/$$m || exit 1; done
 

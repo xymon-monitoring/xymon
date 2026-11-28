@@ -19,15 +19,22 @@ xymon-apacheconf.txt: xymon-apacheconf.txt.DIST
 clean:
 	rm -f xymon-tips.html xymon-apacheconf.txt *~
 
-install:
-	mkdir -p $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages
-	cd manpages; tar cf - . | (cd $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages; tar xf -)
-	cp -f *html *txt *png *jpg $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/; rm -f $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/man-index.html
-	cp -f man-index.html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages/index.html
+# install-safe places each file and directory without following a symlink at
+# the destination name, owning and moding it as it goes. See client/Makefile.
+INSTALLSAFE = ../build/install-safe
 ifndef PKGBUILD
-	chown -R $(XYMONUSER) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help
-	chgrp -R `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help
-	# These may fail if no files installed
-	(find $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/ -type d | xargs chmod 755 ) || /bin/true
-	(find $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/ -type f | xargs chmod 644 ) || /bin/true
+ISOWN = -o $(XYMONUSER) -g `$(IDTOOL) -g $(XYMONUSER)`
 endif
+
+install:
+	# The help tree is created and each file placed per file -- no tar extract or
+	# recursive chown, both of which would follow a symlink planted in the dir.
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages
+	for f in manpages/*; do test -f "$$f" || continue; $(INSTALLSAFE) copy -m 644 $(ISOWN) "$$f" $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages/`basename "$$f"` || exit 1; done
+	for d in man1 man5 man7 man8; do \
+		$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages/$$d || exit 1; \
+		for f in manpages/$$d/*; do test -e "$$f" || continue; $(INSTALLSAFE) copy -m 644 $(ISOWN) "$$f" $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages/$$d/`basename "$$f"` || exit 1; done; \
+	done
+	for f in *html *txt *png *jpg; do test -e "$$f" || continue; $(INSTALLSAFE) copy -m 644 $(ISOWN) "$$f" $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/`basename "$$f"` || exit 1; done
+	rm -f $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/man-index.html
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) man-index.html $(INSTALLROOT)$(INSTALLSTATICWWWDIR)/help/manpages/index.html
