@@ -27,27 +27,19 @@ clean:
 	rm -f *.o *.a *~ $(PROGRAMS)
 
 
+# install-safe places each file and directory without following a symlink at
+# the destination name, owning and moding it as it goes. See client/Makefile.
+INSTALLSAFE = ../build/install-safe
+ifndef PKGBUILD
+ISOWN = -o $(XYMONUSER) -g `$(IDTOOL) -g $(XYMONUSER)`
+endif
+
 install: install-bin install-man
 
 install-bin: $(PROGRAMS)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
-	chmod 755 $(PROGRAMS) 
-endif
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+	for f in $(PROGRAMS); do $(INSTALLSAFE) copy -m 755 $(ISOWN) $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; done
 
 install-man:
-ifndef PKGBUILD
-	chown $(XYMONUSER) *.1
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1
-	chmod 644 *.1
-endif
-	mkdir -p $(INSTALLROOT)$(MANROOT)/man1
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1
-	chmod 755 $(INSTALLROOT)$(MANROOT)/man1
-endif
-	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
+	$(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(MANROOT)/man1
+	for m in *.1; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man1/$$m || exit 1; done
 

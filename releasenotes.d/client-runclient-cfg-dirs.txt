@@ -1,0 +1,14 @@
+client -- runclient.sh uses the log and tmp directories xymonclient.cfg names
+-----------------------------------------------------------------------------
+
+runclient.sh now takes the client's log and tmp directories from
+XYMONCLIENTLOGS and XYMONTMP in xymonclient.cfg: it checks that both are
+writable before starting the client, and keeps clientlaunch.log and the
+clientlaunch pid file in the log directory. It used the logs and tmp
+directories under XYMONCLIENTHOME whatever the file said. The HP-UX client
+writes its top output to XYMONTMP too. With the shipped settings nothing
+changes.
+
+A client whose xymonclient.cfg names another log directory keeps its pid
+file there from now on: stop it before upgrading, since the new runclient.sh
+looks for the running client's pid file in that directory.

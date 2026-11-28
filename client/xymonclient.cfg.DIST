@@ -11,8 +11,8 @@ SHELL="/bin/sh"				# Shell to use when forking programs
 XYMONDPORT="1984"                   # Portnumber where xymond listens
 XYMONHOME="$XYMONCLIENTHOME"       # Directory for the Xymon client files
 XYMON="$XYMONHOME/bin/xymon"          # The Xymon client "xymon" utility
-XYMONTMP="$XYMONHOME/tmp"             # Where we may store temporary files.
-XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
+XYMONTMP="$XYMONCLIENTTMPDIR"         # Where we may store temporary files. The directory this build installed: $XYMONHOME/tmp unless INSTALLCLIENTTMPDIR moved it.
+XYMONCLIENTLOGS="$XYMONCLIENTLOGDIR"  # Where we store the client logfiles. The directory this build installed: $XYMONHOME/logs unless INSTALLCLIENTLOGDIR moved it.
 XYMONCLIENTRUNDIR="@XYMONCLIENTRUNDIR@"  # Where we store pidfiles. Default $XYMONCLIENTLOGS; a build that sets XYMONCLIENTRUNDIR names that directory here.
 
 # Options to logfetch, the xymon binary which examines log files for recent changes.

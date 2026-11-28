@@ -18,6 +18,9 @@ set -euo pipefail
 ROOT=$(find_root)
 [ -f "$ROOT/web/Makefile" ] || skip "web/Makefile absent"
 require_gnu_make
+# The converted install recipes call build/install-safe; without a build it is
+# absent, as in the no-build suite lane, so skip rather than fail there.
+require_bin INSTALLSAFE_BIN build/install-safe
 
 # "-o install-bin": install-cgi depends on install-bin, which chowns and copies
 # the built CGIs. This test is about install-cgi's own recipe and supplies its

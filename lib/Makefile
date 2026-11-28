@@ -39,24 +39,31 @@ client: test-endianness $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB) $(XYMONTIMELIB)
 # The kit is plain files for compilers, owned by whoever installs it.
 INSTALLARCHIVES = $(XYMONLIB) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONCLIENTLIB) $(XYMONCLIENTCOMMLIB)
 
+# install-safe places each file and directory without following a symlink at
+# the destination name. The libraries and headers keep root's ownership (the old
+# recipe set none), so install is called with only -m; the diagnostic tools are
+# the Xymon user's, as before, so they add $(ISOWN).
+INSTALLSAFE = ../build/install-safe
+ifndef PKGBUILD
+ISOWN = -o $(XYMONUSER) -g `$(IDTOOL) -g $(XYMONUSER)`
+endif
+
 install:
-	cp -f $(INSTALLARCHIVES) $(INSTALLROOT)$(INSTALLLIBDIR)/
-	cd $(INSTALLROOT)$(INSTALLLIBDIR) && chmod 644 $(INSTALLARCHIVES)
+	for a in $(INSTALLARCHIVES); do $(INSTALLSAFE) copy -m 644 $$a $(INSTALLROOT)$(INSTALLLIBDIR)/$$a || exit 1; done
 	# Shared objects only if this tree built any: devel does, main does
 	# not, and an unmatched glob must not look like a failure.
 	for f in *.so*; do \
 		test -e "$$f" || continue; \
-		cp -f "$$f" $(INSTALLROOT)$(INSTALLLIBDIR)/ || exit 1; \
-		chmod 755 $(INSTALLROOT)$(INSTALLLIBDIR)/"$$f" || exit 1; \
+		$(INSTALLSAFE) copy -m 755 "$$f" $(INSTALLROOT)$(INSTALLLIBDIR)/"$$f" || exit 1; \
 	done
 	# The headers, so the libraries above can actually be built against.
 	# include/ and lib/ have to stay siblings: libxymon.h reaches its
 	# remaining headers as "../lib/...", so a flat directory breaks on
 	# the first include. One -I$(INSTALLINCDIR)/include then works.
-	mkdir -p $(INSTALLROOT)$(INSTALLINCDIR)/include $(INSTALLROOT)$(INSTALLINCDIR)/lib
-	cp -f ../include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/include/
-	cp -f *.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/
-	chmod 644 $(INSTALLROOT)$(INSTALLINCDIR)/include/*.h $(INSTALLROOT)$(INSTALLINCDIR)/lib/*.h
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(INSTALLINCDIR)/include
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(INSTALLINCDIR)/lib
+	for h in ../include/*.h; do $(INSTALLSAFE) copy -m 644 $$h $(INSTALLROOT)$(INSTALLINCDIR)/include/`basename $$h` || exit 1; done
+	for h in *.h; do $(INSTALLSAFE) copy -m 644 $$h $(INSTALLROOT)$(INSTALLINCDIR)/lib/$$h || exit 1; done
 
 test-endianness: test-endianness.c
 	$(CC) $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -o $@ $<
@@ -114,11 +121,30 @@ sha1.o: sha1.c test-endianness
 rmd160c.o: rmd160c.c test-endianness
 	$(CC) $(CPPFLAGS) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
-environ.o: environ.c $(wildcard ../build/build-id)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
+# The client directories this build relocated, compiled into environ.c's
+# table; empty for a directory left under the client's home. clientdirs.def
+# records them and is rewritten only when they change, so a tree configured
+# again with other directories rebuilds environ, and install can tell a
+# directory named on its own command line from the one that was compiled.
+CLIENTDIRDEFS =
+ifneq ($(strip $(XYMONCLIENTTMPDIRDEF)),)
+CLIENTDIRDEFS += -DXYMONCLIENTTMPDIR=\"$(XYMONCLIENTTMPDIRDEF)\"
+endif
+ifneq ($(strip $(XYMONCLIENTLOGDIRDEF)),)
+CLIENTDIRDEFS += -DXYMONCLIENTLOGDIR=\"$(XYMONCLIENTLOGDIRDEF)\"
+endif
 
-environ-client.o: environ.c $(wildcard ../build/build-id)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONCLIENTHOME)\" -c -o $@ environ.c
+.PHONY: FORCE
+FORCE:
+
+clientdirs.def: FORCE
+	@new='$(XYMONCLIENTTMPDIRDEF)|$(XYMONCLIENTLOGDIRDEF)'; test -f $@ && test "`cat $@`" = "$$new" || echo "$$new" > $@
+
+environ.o: environ.c clientdirs.def $(wildcard ../build/build-id)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(CLIENTDIRDEFS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONHOME)\" -c -o $@ environ.c
+
+environ-client.o: environ.c clientdirs.def $(wildcard ../build/build-id)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(CLIENTDIRDEFS) -DXYMONBUILD=\"$(XYMONBUILD)\" -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DXYMONHOME=\"$(XYMONCLIENTHOME)\" -c -o $@ environ.c
 
 color-client.o: color.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
@@ -174,22 +200,10 @@ tree: tree.c
 LIBTOOLS = xymonloadhosts xymonstackio xymonavailability xymonlocator
 
 install-tools: $(LIBTOOLS)
-	@mkdir -p $(INSTALLROOT)$(INSTALLBINDIR)
-	for f in $(LIBTOOLS); do \
-		cp -fp $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
-		chmod 755 $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
-	done
-	@mkdir -p $(INSTALLROOT)$(MANROOT)/man1
-	cp -fp xymontools.1 $(INSTALLROOT)$(MANROOT)/man1/
-	chmod 644 $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
-ifndef PKGBUILD
-	for f in $(LIBTOOLS); do \
-		chown $(XYMONUSER) $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
-		chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; \
-	done
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
-endif
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(INSTALLBINDIR)
+	for f in $(LIBTOOLS); do $(INSTALLSAFE) copy -m 755 $(ISOWN) $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; done
+	$(INSTALLSAFE) mkdir -m 755 $(INSTALLROOT)$(MANROOT)/man1
+	$(INSTALLSAFE) copy -m 644 $(ISOWN) xymontools.1 $(INSTALLROOT)$(MANROOT)/man1/xymontools.1
 
 clean:
-	rm -f *.o *.a *~ $(LIBTOOLS) test-endianness md5 sha1 rmd160 tree
+	rm -f *.o *.a *~ $(LIBTOOLS) test-endianness md5 sha1 rmd160 tree clientdirs.def

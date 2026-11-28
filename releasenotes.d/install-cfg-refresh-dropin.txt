@@ -1,0 +1,15 @@
+install -- shipped config files are refreshed on upgrade, customise in .d/
+--------------------------------------------------------------------------
+
+Reinstalling now installs each shipped configuration file (xymonserver.cfg,
+tasks.cfg, protocols.cfg, the client's xymonclient.cfg and clientlaunch.cfg,
+and the rest) over the installed copy, rather than merging your changes into
+it; the previous real file is kept as <name>.bak. Keep customisation in the
+matching drop-in directory -- xymonserver.d, tasks.d, xymonclient.d and so on,
+which the install never touches.
+
+A change made directly in a .cfg is overwritten on upgrade (recover it from
+<name>.bak), and a .cfg you relocated with a symlink is replaced by a default
+at its own name with no .bak; put customisation in the .d directory instead. In
+particular the client's server address, XYMSRV in xymonclient.cfg, resets to
+its default: keep it in a file under xymonclient.d/ so the client finds it.

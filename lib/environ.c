@@ -25,6 +25,17 @@ static char rcsid[] = "$Id$";
 #define XYMONBUILD ""
 #endif
 
+/* Where this build installed the client's tmp and log directories, when it
+   relocated them (INSTALLCLIENTTMPDIR, INSTALLCLIENTLOGDIR). A default build
+   leaves them under the client's home, wherever that is at run time, so the
+   client directory can still be moved as a whole. */
+#ifndef XYMONCLIENTTMPDIR
+#define XYMONCLIENTTMPDIR "$XYMONHOME/tmp"
+#endif
+#ifndef XYMONCLIENTLOGDIR
+#define XYMONCLIENTLOGDIR "$XYMONHOME/logs"
+#endif
+
 const static struct {
 	char *name;
 	char *val;
@@ -41,6 +52,12 @@ const static struct {
 	   name one: its log directory, where msgcache.pid has always been. Not
 	   $XYMONRUNDIR, which resolves to "" in a client-only build. */
 	{ "XYMONCLIENTRUNDIR", "$XYMONCLIENTLOGS" },
+	/* What xymonclient.cfg's XYMONTMP and XYMONCLIENTLOGS refer to. Here and
+	   not in that file, because install keeps an installed file's lines and
+	   replaces the programs: a client installed to other directories a second
+	   time would keep naming the first ones. */
+	{ "XYMONCLIENTTMPDIR", XYMONCLIENTTMPDIR },
+	{ "XYMONCLIENTLOGDIR", XYMONCLIENTLOGDIR },
 	{ "XYMONSERVERHOSTNAME", XYMONHOSTNAME },
 	{ "XYMONSERVERIP", XYMONHOSTIP },
 	{ "XYMONSERVEROS", XYMONHOSTOS },

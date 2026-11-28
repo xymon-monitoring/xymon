@@ -1,0 +1,20 @@
+client -- xymonclient.cfg follows a relocated tmp and log directory
+-------------------------------------------------------------------
+
+xymonclient.cfg now sets XYMONTMP and XYMONCLIENTLOGS to
+"$XYMONCLIENTTMPDIR" and "$XYMONCLIENTLOGDIR": the directories the client's
+programs were built for. A build that moves them with INSTALLCLIENTTMPDIR or
+INSTALLCLIENTLOGDIR (in a client-only build, also INSTALLTMPDIR) makes the
+programs resolve those two names to the moved directories; a build that
+moves nothing resolves them to $XYMONHOME/tmp and $XYMONHOME/logs as before,
+so a client's directory can still be moved as a whole. The path is in the
+programs and not in the file, so a client installed again to other
+directories needs no edit. Packagers who patched these two lines to name
+their directories can set the two variables instead.
+
+Upgrading: the install overwrites xymonclient.cfg with the shipped file,
+which names the two directories by reference, and keeps the old copy as
+xymonclient.cfg.bak. A value you set in the two lines earlier releases
+shipped, XYMONTMP="$XYMONHOME/tmp" and XYMONCLIENTLOGS="$XYMONHOME/logs", is
+the default nobody chose and is simply replaced; a directory of your own,
+moved from the .bak into xymonclient.d, still decides.
