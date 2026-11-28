@@ -473,7 +473,7 @@ $dirty"
 
 	head_sha=$(git rev-parse HEAD) || die "not a git checkout"
 	base_ref=$BASE
-	git rev-parse -q --verify "$base_ref" >/dev/null 2>&1 || base_ref="up/$BASE"
+	git rev-parse -q --verify "$base_ref" >/dev/null 2>&1 || base_ref="$UP_REFS$BASE"
 	git rev-parse -q --verify "$base_ref" >/dev/null 2>&1 \
 		|| die "cannot find $BASE to compare against"
 	mb=$(git merge-base "$base_ref" HEAD) \
@@ -588,10 +588,18 @@ $dirty"
 # ---------------------------------------------------------------------------
 # integration mode
 # ---------------------------------------------------------------------------
+# Where the fetched heads go, always named in full. A short name -- "pr/431",
+# "up/main" -- is resolved by git's own order, which takes refs/pr/431 before
+# refs/remotes/pr/431: a ref of that name left in the clone by anything else,
+# an old snapshot, swaps in another commit for the pull request, and the
+# report reads as a real result for it.
+PR_REFS=refs/remotes/pr/
+UP_REFS=refs/remotes/up/
+
 fetch_heads() {
 	git remote add up "https://github.com/$REPO.git" 2>/dev/null || :
-	git fetch -q up "+refs/heads/$BASE:refs/remotes/up/$BASE" \
-		"+refs/pull/*/head:refs/remotes/pr/*" \
+	git fetch -q up "+refs/heads/$BASE:$UP_REFS$BASE" \
+		"+refs/pull/*/head:${PR_REFS}*" \
 		|| die "cannot fetch $REPO"
 }
 
@@ -652,9 +660,9 @@ run_integration() {
 	i_here=$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)
 	fetch_heads
 	list_prs
-	build_integration "up/$BASE" pr/
+	build_integration "$UP_REFS$BASE" "$PR_REFS"
 	integ=$(git rev-parse HEAD)
-	base_sha=$(git rev-parse "up/$BASE")
+	base_sha=$(git rev-parse "$UP_REFS$BASE")
 
 	build_tree || die "the integration branch does not build; nothing below would mean anything"
 
@@ -670,29 +678,29 @@ run_integration() {
 	: >"$work/alltests"
 	: >"$work/narrow"
 	while IFS= read -r n; do
-		mb=$(git merge-base "$base_sha" "pr/$n" 2>/dev/null) || mb=$base_sha
+		mb=$(git merge-base "$base_sha" "$PR_REFS$n" 2>/dev/null) || mb=$base_sha
 		deps=$(gh pr view "$n" --repo "$REPO" --json body -q .body 2>/dev/null \
 			| declared_deps)
 		set --
 		for d in $deps; do
-			git rev-parse -q --verify "pr/$d" >/dev/null 2>&1 && set -- "$@" "pr/$d"
+			git rev-parse -q --verify "$PR_REFS$d" >/dev/null 2>&1 && set -- "$@" "$PR_REFS$d"
 		done
 		if [ $# -gt 0 ]; then
-			mb=$(range_base "$mb" "pr/$n" "$@" 2>"$work/missed")
+			mb=$(range_base "$mb" "$PR_REFS$n" "$@" 2>"$work/missed")
 			while IFS= read -r d; do
 				printf '#%s\tits history does not contain %s, so that dependency stays in the range\n' \
 					"$n" "${d#pr/}" >>"$work/narrow"
 			done <"$work/missed"
 		fi
 		printf '%s %s\n' "$n" "$mb" >>"$work/mb"
-		changed "$mb" "pr/$n" | runnable_tests >>"$work/alltests"
+		changed "$mb" "$PR_REFS$n" | runnable_tests >>"$work/alltests"
 	done <"$work/evaluate"
 	qualify
 
 	: >"$work/findings"
 	while IFS= read -r n; do
 		mb=$(awk -v n="$n" '$1 == n {print $2; exit}' "$work/mb")
-		evaluate "#$n" "$mb" "pr/$n" "$integ"
+		evaluate "#$n" "$mb" "$PR_REFS$n" "$integ"
 	done <"$work/evaluate"
 
 	n_merged=$(wc -l <"$work/merged" | tr -d ' ')
@@ -734,10 +742,11 @@ case $mode in
 	declared)  declared_deps; exit 0 ;;
 	rangebase) range_base "$@"; exit 0 ;;
 	integrate)
-		# --integrate BASE REF... : the merge step alone, for its test.
+		# --integrate BASE N... : the merge step alone, for its test, merging
+		# the same refs as a run does.
 		i_base=$1; shift
 		printf '%s\n' "$@" >"$work/prs"
-		build_integration "$i_base" ""
+		build_integration "$i_base" "$PR_REFS"
 		cat "$work/merged"
 		exit 0 ;;
 	local)  run_local ;;
