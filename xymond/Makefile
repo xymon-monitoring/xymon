@@ -138,8 +138,14 @@ moverrd.sh: moverrd.sh.DIST
 
 ifeq ($(XYMONCGIURL),$(SECUREXYMONCGIURL))
    APACHECONF = etcfiles/xymon-apache-open.DIST
+   LIGHTTPDCONF = etcfiles/xymon-lighttpd-open.conf.DIST
+   NGINXCONF = etcfiles/xymon-nginx-open.conf.DIST
+   CADDYCONF = etcfiles/xymon-caddy-open.conf.DIST
 else
    APACHECONF = etcfiles/xymon-apache-secure.DIST
+   LIGHTTPDCONF = etcfiles/xymon-lighttpd-secure.conf.DIST
+   NGINXCONF = etcfiles/xymon-nginx-secure.conf.DIST
+   CADDYCONF = etcfiles/xymon-caddy-secure.conf.DIST
 endif
 
 # The Apache alias for the web pages. A literal Alias, so the URL is never
@@ -147,8 +153,28 @@ endif
 # XYMONHOSTURL empty) it needs the trailing slash on both sides.
 XYMONWEBALIAS = $(if $(XYMONHOSTURL),Alias $(XYMONHOSTURL) "$(INSTALLWWWDIR)",Alias / "$(INSTALLWWWDIR)/")
 
+# The lighttpd, nginx and caddy examples redirect a bare XYMONHOSTURL to its
+# trailing-slash form. With Xymon at the site root (XYMONHOSTURL empty) there
+# is no bare URL to redirect, and the line is left out.
+EXAMPLECOMMENT := \#
+LIGHTTPDBAREREDIRECT = $(if $(XYMONHOSTURL),url.redirect += ( "^$(XYMONHOSTURL)$$" => "$(XYMONHOSTURL)/" ),$(EXAMPLECOMMENT) Xymon is at the site root: no redirect for a bare URL)
+NGINXBAREREDIRECT = $(if $(XYMONHOSTURL),location = $(XYMONHOSTURL) { return 301 $(XYMONHOSTURL)/; },$(EXAMPLECOMMENT) Xymon is at the site root: no redirect for a bare URL)
+CADDYBAREREDIRECT = $(if $(XYMONHOSTURL),redir $(XYMONHOSTURL) $(XYMONHOSTURL)/ 301,$(EXAMPLECOMMENT) Xymon is at the site root: no redirect for a bare URL)
+
+# The lighttpd, nginx and caddy examples guard the secure CGI URL, where
+# Apache guards the secure CGI directory. With one directory for both, they
+# would serve the administration CGIs through XYMONCGIURL without a password.
+ifneq ($(XYMONCGIURL),$(SECUREXYMONCGIURL))
+ifeq ($(CGIDIR),$(SECURECGIDIR))
+$(warning CGIDIR and SECURECGIDIR are the same directory, $(CGIDIR): the lighttpd, nginx and caddy examples would serve the administration CGIs through $(XYMONCGIURL) without a password; use the Apache configuration, or separate directories)
+endif
+endif
+
 cfgfiles:
 	XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' XYMONWEBALIAS='$(XYMONWEBALIAS)' ../build/subst.sh XYMONHOME INSTALLETCDIR INSTALLWWWDIR CGIDIR SECURECGIDIR XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL XYMONWEBALIAS <$(APACHECONF) >etcfiles/xymon-apache.conf
+	XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' LIGHTTPDBAREREDIRECT='$(LIGHTTPDBAREREDIRECT)' ../build/subst.sh XYMONHOME INSTALLETCDIR INSTALLWWWDIR CGIDIR SECURECGIDIR XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL LIGHTTPDBAREREDIRECT <$(LIGHTTPDCONF) >etcfiles/xymon-lighttpd.conf
+	XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' NGINXBAREREDIRECT='$(NGINXBAREREDIRECT)' ../build/subst.sh XYMONHOME INSTALLETCDIR INSTALLWWWDIR CGIDIR SECURECGIDIR XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL NGINXBAREREDIRECT <$(NGINXCONF) >etcfiles/xymon-nginx.conf
+	XYMONHOME='$(XYMONHOME)' INSTALLETCDIR='$(INSTALLETCDIR)' INSTALLWWWDIR='$(INSTALLWWWDIR)' CGIDIR='$(CGIDIR)' SECURECGIDIR='$(SECURECGIDIR)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' CADDYBAREREDIRECT='$(CADDYBAREREDIRECT)' ../build/subst.sh XYMONHOME INSTALLETCDIR INSTALLWWWDIR CGIDIR SECURECGIDIR XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL CADDYBAREREDIRECT <$(CADDYCONF) >etcfiles/xymon-caddy.conf
 	XYMONTOPDIR='$(XYMONTOPDIR)' XYMONLOGDIR='$(XYMONLOGDIR)' XYMONRUNDIR='$(XYMONRUNDIR)' XYMONHOSTNAME='$(XYMONHOSTNAME)' XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOSTOS='$(XYMONHOSTOS)' XYMONHOSTURL='$(XYMONHOSTURL)' XYMONCGIURL='$(XYMONCGIURL)' SECUREXYMONCGIURL='$(SECUREXYMONCGIURL)' XYMONHOME='$(XYMONHOME)' XYMONSTATICWWWDIR='$(INSTALLSTATICWWWDIR)' XYMONVAR='$(XYMONVAR)' FPING='$(FPING)' MAILPROGRAM='$(MAILPROGRAM)' RUNTIMEDEFS='$(RUNTIMEDEFS)' ../build/subst.sh XYMONTOPDIR XYMONLOGDIR XYMONRUNDIR XYMONHOSTNAME XYMONHOSTIP XYMONHOSTOS XYMONHOSTURL XYMONCGIURL SECUREXYMONCGIURL XYMONHOME XYMONSTATICWWWDIR XYMONVAR FPING MAILPROGRAM RUNTIMEDEFS <etcfiles/xymonserver.cfg.DIST >etcfiles/xymonserver.cfg
 	../build/bb-commands.sh >>etcfiles/xymonserver.cfg
 	XYMONHOSTNAME='$(XYMONHOSTNAME)' XYMONHOSTIP='$(XYMONHOSTIP)' XYMONHOME='$(XYMONHOME)' ../build/subst.sh XYMONHOSTNAME XYMONHOSTIP XYMONHOME <etcfiles/hosts.cfg.DIST >etcfiles/hosts.cfg
@@ -162,7 +188,7 @@ cfgfiles:
 
 clean:
 	rm -f $(PROGRAMS) *.o *~ client/*~ rrd/*~
-	rm -f etcfiles/xymon-apache.conf etcfiles/xymonserver.cfg etcfiles/hosts.cfg etcfiles/alerts.cfg etcfiles/tasks.cfg etcfiles/cgioptions.cfg etcfiles/analysis.cfg etcfiles/combo.cfg etcfiles/graphs.cfg etcfiles/client-local.cfg etcfiles/rrddefinitions.cfg
+	rm -f etcfiles/xymon-apache.conf etcfiles/xymon-lighttpd.conf etcfiles/xymon-nginx.conf etcfiles/xymon-caddy.conf etcfiles/xymonserver.cfg etcfiles/hosts.cfg etcfiles/alerts.cfg etcfiles/tasks.cfg etcfiles/cgioptions.cfg etcfiles/analysis.cfg etcfiles/combo.cfg etcfiles/graphs.cfg etcfiles/client-local.cfg etcfiles/rrddefinitions.cfg
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
 # install-safe places each file and directory without following a symlink at
