@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 
 typedef struct entry_t {
 	char *name;
@@ -27,7 +29,7 @@ newname_t *newnames = NULL;
 
 int main(int argc, char *argv[])
 {
-	char *curfn, *curbckfn, *srcfn;
+	char *curfn, *curbckfn, *srcfn, *curtmp;
 	FILE *curfd, *curbckfd, *srcfd;
 	struct stat st;
 	char l[32768];
@@ -37,7 +39,7 @@ int main(int argc, char *argv[])
 	int showit = 1;
 
 	if (argc < 3) {
-		printf("Usage: %s DESTINATIONFILE TEMPLATEFILE\n", argv[0]);
+		printf("Usage: %s TEMPLATEFILE DESTINATIONFILE\n", argv[0]);
 		return 1;
 	}
 
@@ -62,11 +64,24 @@ int main(int argc, char *argv[])
 
 	curbckfn = (char *)malloc(strlen(curfn) + 5);
 	sprintf(curbckfn, "%s.bak", curfn);
+	curtmp = (char *)malloc(strlen(curfn) + 32);
+	sprintf(curtmp, "%s.inst.%ld", curfn, (long)getpid());
 
-	if (stat(curfn, &st) == -1) { showit = 0; goto nooriginal; }
+	/* lstat, not stat: a symlink at the name is not followed. It is left
+	 * unread (and replaced below), so its target is never copied into .bak. A
+	 * stat error other than "absent" is a failure, not a reason to replace. */
+	if (lstat(curfn, &st) == -1) {
+		if (errno != ENOENT) { printf("Cannot stat config file %s\n", curfn); return 1; }
+		showit = 0; goto nooriginal;
+	}
+	if (S_ISLNK(st.st_mode)) { showit = 0; goto nooriginal; }
 
-	curfd = fopen(curfn, "r");
-	unlink(curbckfn); curbckfd = fopen(curbckfn, "w");
+	{ int cfd = open(curfn, O_RDONLY | O_NOFOLLOW); curfd = (cfd >= 0) ? fdopen(cfd, "r") : NULL; if (cfd >= 0 && !curfd) close(cfd); }
+	unlink(curbckfn);
+	/* The .bak is a private backup the administrator reads as root: created
+	 * root-owned, mode 0600, not given the config's Xymon ownership, which a
+	 * backup does not need. */
+	{ int bfd = open(curbckfn, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0600); curbckfd = (bfd >= 0) ? fdopen(bfd, "w") : NULL; if (bfd >= 0 && !curbckfd) close(bfd); }
 	if (curfd == NULL) { printf("Cannot open configuration file %s\n", curfn); return 1; }
 	if (curbckfd == NULL) { printf("Cannot open backup file %s\n", curbckfn); return 1; }
 
@@ -109,15 +124,21 @@ int main(int argc, char *argv[])
 			strcat(newent->val, l);
 		}
 	}
+	if (ferror(curfd)) { printf("Read failed on %s\n", curfn); fclose(curbckfd); return 1; }
 	fclose(curfd);
-	fclose(curbckfd);
+	{ int berr = ferror(curbckfd); if (fclose(curbckfd) != 0 || berr) { printf("Backup write failed on %s\n", curbckfn); return 1; } }
 
 nooriginal:
+	/* Build the replacement in a temp in the destination's directory, then rename
+	 * it over the name: the live config is untouched until a complete, checked
+	 * result is ready, and the rename acts on the name, never a symlink's target.
+	 * Open the template first, so a missing one fails before anything is created. */
 	srcfd = fopen(srcfn, "r");
-	unlink(curfn); curfd = fopen(curfn, "w");
 	if (srcfd == NULL) { printf("Cannot open template file %s\n", srcfn); return 1; }
-	if (curfd == NULL) { printf("Cannot open config file %s\n", curfn); return 1; }
-	fchmod(fileno(curfd), S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+	unlink(curtmp);
+	{ int wfd = open(curtmp, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0600); curfd = (wfd >= 0) ? fdopen(wfd, "w") : NULL; if (wfd >= 0 && !curfd) close(wfd); }
+	if (curfd == NULL) { printf("Cannot create temporary %s\n", curtmp); fclose(srcfd); return 1; }
+	if (fchmod(fileno(curfd), S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH) != 0) { printf("Cannot set mode of %s\n", curtmp); unlink(curtmp); return 1; }
 
 	while (fgets(l, sizeof(l), srcfd)) {
 		char *bol, *p;
@@ -152,8 +173,19 @@ nooriginal:
 		}
 	}
 
-	fclose(curfd);
+	/* A buffered write error (ENOSPC, say) surfaces only at flush/close, and a
+	 * template read error -- including fgets on a directory handed as the template
+	 * -- would have stopped the loop early: report either, discard the temp, and
+	 * leave the live config in place. Compute ferror before fclose, which clears
+	 * the stream, and always close. */
+	if (ferror(srcfd)) { printf("Read failed on template %s\n", srcfn); unlink(curtmp); return 1; }
+	if (fflush(curfd) != 0 || (fsync(fileno(curfd)) != 0 && errno != EINVAL && errno != ENOTSUP)) {
+		printf("Cannot flush %s\n", curtmp); fclose(curfd); unlink(curtmp); return 1;
+	}
+	{ int werr = ferror(curfd); if (fclose(curfd) != 0 || werr) { printf("Write failed on %s\n", curtmp); unlink(curtmp); return 1; } }
 	fclose(srcfd);
+	/* Atomic replace, on the name. */
+	if (rename(curtmp, curfn) != 0) { printf("Cannot install %s\n", curfn); unlink(curtmp); return 1; }
 
 	return 0;
 }

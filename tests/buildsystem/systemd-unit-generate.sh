@@ -43,6 +43,9 @@ for ph in $placeholders; do
 done
 
 require_gnu_make
+# The converted install recipes call build/install-safe; without a build it is
+# absent, as in the no-build suite lane, so skip rather than fail there.
+require_bin INSTALLSAFE_BIN build/install-safe
 
 # ---- INSTALLSYSTEMDDIR set: the unit is generated with the given paths -------
 work=$(mktempdir); register_cleanup "rm -rf '$work'"

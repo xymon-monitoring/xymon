@@ -60,8 +60,18 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENTLOGS"><a class="permalink" href="#XYMONCLIENTLOGS"><b>XYMONCLIENTLOGS</b></a></dt>
-  <dd>The directory for the Xymon clients' own log files. Default:
-      $XYMONHOME/logs
+  <dd>The directory for the Xymon clients' own log files. The shipped value is
+      $XYMONCLIENTLOGDIR, the directory the client was built to log in:
+      $XYMONHOME/logs, or the one a build moved it to with INSTALLCLIENTLOGDIR.
+      The programs know that directory, not this file, so a client installed
+      again to another directory needs no change here. To override it, set
+      XYMONCLIENTLOGS in a file under $XYMONHOME/etc/xymonclient.d, which this
+      file includes after this line, rather than editing the line itself. A
+      value is expanded where it is set: the settings this file derives from
+      XYMONCLIENTLOGS before the include keep the shipped directory, so set them
+      in xymonclient.d as well when they must follow. They are BBCLIENTLOGS, and
+      XYMONCLIENTRUNDIR, where msgcache writes its pidfile, unless the build set
+      XYMONCLIENTRUNDIR to a directory of its own.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENTRUNDIR"><a class="permalink" href="#XYMONCLIENTRUNDIR"><b>XYMONCLIENTRUNDIR</b></a></dt>
@@ -76,7 +86,13 @@ Section: File Formats (5)<br/>Updated: Version 4.3.31: 6 Nov 2026<br/><a href="#
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONTMP"><a class="permalink" href="#XYMONTMP"><b>XYMONTMP</b></a></dt>
-  <dd>Directory used for temporary files. Default: $XYMONHOME/tmp/
+  <dd>Directory used for temporary files. The shipped value is
+      $XYMONCLIENTTMPDIR, the directory the client was built to use:
+      $XYMONHOME/tmp, or the one a build moved it to with INSTALLCLIENTTMPDIR
+      (in a client-only build, also INSTALLTMPDIR). Override it as
+      XYMONCLIENTLOGS, in a file under xymonclient.d. BBTMP, derived from it
+      before the include, keeps the shipped directory unless it is set there as
+      well.
     <p class="Pp"></p>
   </dd>
   <dt id="XYMONCLIENT_FS_INCLUDE_TYPES"><a class="permalink" href="#XYMONCLIENT_FS_INCLUDE_TYPES"><b>XYMONCLIENT_FS_INCLUDE_TYPES</b></a></dt>
