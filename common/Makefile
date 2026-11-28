@@ -91,31 +91,25 @@ xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/st
 clean:
 	rm -f *.o *.a *~ $(PROGRAMS) $(CLIENTPROGRAMS)
 
+# install-safe places each file and directory without following a symlink at
+# the destination name, owning and moding it as it goes. See client/Makefile.
+INSTALLSAFE = ../build/install-safe
+ifndef PKGBUILD
+ISOWN = -o $(XYMONUSER) -g `$(IDTOOL) -g $(XYMONUSER)`
+endif
+
 install: install-bin install-man
 
 install-bin: $(PROGRAMS)
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(PROGRAMS)
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(PROGRAMS)
-	chmod 755 $(PROGRAMS)
-endif
-	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+	for f in $(PROGRAMS); do $(INSTALLSAFE) copy -m 755 $(ISOWN) $$f $(INSTALLROOT)$(INSTALLBINDIR)/$$f || exit 1; done
+	# Compatibility symlinks for the old BigBrother command names. Creating a
+	# symlink is not following one, so these stay as ln -s.
 	cd $(INSTALLROOT)$(INSTALLBINDIR)/; rm -f bb bbcmd bbhostgrep bbhostshow; ln -s xymon bb; ln -s xymoncmd bbcmd; ln -s xymongrep bbhostgrep; ln -s xymondigest bbdigest; ln -s xymoncfg bbhostshow
 
 install-man:
-ifndef PKGBUILD
-	chown $(XYMONUSER) *.1 *.5 *.7 *.8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` *.1 *.5 *.7 *.8
-	chmod 644 *.1 *.5 *.7 *.8
-endif
-	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
-ifndef PKGBUILD
-	chown $(XYMONUSER) $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
-	chgrp `$(IDTOOL) -g $(XYMONUSER)` $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
-	chmod 755 $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
-endif
-	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
-	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
-	cp -fp *.7 $(INSTALLROOT)$(MANROOT)/man7/
-	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
+	for d in man1 man5 man7 man8; do $(INSTALLSAFE) mkdir -m 755 $(ISOWN) $(INSTALLROOT)$(MANROOT)/$$d || exit 1; done
+	for m in *.1; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man1/$$m || exit 1; done
+	for m in *.5; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man5/$$m || exit 1; done
+	for m in *.7; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man7/$$m || exit 1; done
+	for m in *.8; do $(INSTALLSAFE) copy -m 644 $(ISOWN) $$m $(INSTALLROOT)$(MANROOT)/man8/$$m || exit 1; done
 
